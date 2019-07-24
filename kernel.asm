@@ -7,8 +7,8 @@ MB_FLAGS	equ	0
 	dd	-(MB_MAGIC + MB_FLAGS)
 
 global _start
+extern main
 _start:
-	mov [0xb8000], word 0xf00 + 'O'
-	mov [0xb8002], word 0xf00 + 'K'
+	call main
 	cli
 	hlt
