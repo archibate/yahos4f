@@ -21,11 +21,18 @@ void on_keyboard(void)
 	puts("Int#0x21: Keyboard Interrupt!\n");
 }
 
+void asm_on_timer(void); /* In ientry.asm */
+void on_timer(void)
+{
+	puts("Int#0x20: Timer Interrupt!\n");
+}
+
 void init_idt(void)
 {
 	SETGATE(idt[0x00], 0, 0x08, on_divide_by_zero_error, 0);
 	SETGATE(idt[0x80], 0, 0x08, asm_on_soft_interrupt, 0);
 	SETGATE(idt[0x21], 0, 0x08, asm_on_keyboard, 0);
+	SETGATE(idt[0x20], 0, 0x08, asm_on_timer, 0);
 	static struct idtr {
 		unsigned short limit;
 		unsigned long base;

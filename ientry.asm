@@ -13,3 +13,11 @@ asm_on_keyboard:
 	call on_keyboard
 	popad
 	iretd
+
+global asm_on_timer
+extern on_timer
+asm_on_timer:
+	pushad
+	call on_timer
+	popad
+	iretd
