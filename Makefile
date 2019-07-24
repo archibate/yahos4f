@@ -1,11 +1,11 @@
 run: kernel
 	qemu-system-i386 -kernel $<
 
-kernel.o: kernel.asm
+%.o: %.asm
 	nasm -felf -o $@ $<
 
-main.o: main.c
+%.o: %.c
 	cc -nostdlib -m32 -c -o $@ $<
 
-kernel: kernel.o main.o
+kernel: kernel.o main.o console.o
 	ld -m elf_i386 -e _start -Ttext 0x100000 -o $@ $^
