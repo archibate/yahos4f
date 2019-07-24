@@ -12,13 +12,20 @@ void on_divide_by_zero_error(void)
 void asm_on_soft_interrupt(void); /* In ientry.asm */
 void on_soft_interrupt(void)
 {
-	puts("Int#0x00: Soft Interrupt Called!\n");
+	puts("Int#0x80: Soft Interrupt Called!\n");
+}
+
+void asm_on_keyboard(void); /* In ientry.asm */
+void on_keyboard(void)
+{
+	puts("Int#0x21: Keyboard Interrupt!\n");
 }
 
 void init_idt(void)
 {
 	SETGATE(idt[0x00], 0, 0x08, on_divide_by_zero_error, 0);
 	SETGATE(idt[0x80], 0, 0x08, asm_on_soft_interrupt, 0);
+	SETGATE(idt[0x21], 0, 0x08, asm_on_keyboard, 0);
 	static struct idtr {
 		unsigned short limit;
 		unsigned long base;

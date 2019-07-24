@@ -5,3 +5,11 @@ asm_on_soft_interrupt:
 	call on_soft_interrupt
 	popad
 	iretd
+
+global asm_on_keyboard
+extern on_keyboard
+asm_on_keyboard:
+	pushad
+	call on_keyboard
+	popad
+	iretd

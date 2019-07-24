@@ -1,6 +1,7 @@
 #include "console.h"
 #include "gdt.h"
 #include "idt.h"
+#include "pic.h"
 
 void main(void)
 {
@@ -9,7 +10,10 @@ void main(void)
 	puts("\nGDT Initialized!\n");
 	init_idt();
 	puts("\nIDT Initialized!\n");
-	puts("\nDoing Soft Interrupt...");
-	asm volatile ("int $0x80");
-	puts("\nSoft Interrupt Returned!\n");
+	init_pic();
+	puts("\nPIC Initialized!\n");
+	puts("\nEnabling Hardware Interrupt...\n");
+	irq_setenable(1, 1);
+	asm volatile ("sti\nhlt");
+	puts("Hardware Interrupt Received!\n");
 }
