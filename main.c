@@ -1,7 +1,9 @@
 #include "console.h"
+#include "gdt.h"
 
 void main(void)
 {
-	puts("Hello, World!\nThis is my Very First OS!\n");
-	puts("\nJust do It!\n");
+	puts("Kernel Started...\n");
+	init_gdt();
+	puts("\nGDT Initialized!\n");
 }
