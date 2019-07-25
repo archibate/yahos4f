@@ -1,5 +1,7 @@
 #include "idt.h"
 #include "console.h"
+#include "keybd.h"
+#include "pic.h"
 
 struct gatedesc idt[IDT_NR];
 
@@ -20,11 +22,13 @@ void on_keyboard(void)
 {
 	//puts("Int#0x21: Keyboard Interrupt!\n");
 	kb_handler();
+	irq_done(1);
 }
 
 void asm_on_timer(void); /* In ientry.asm */
 void on_timer(void)
 {
+	irq_done(0);
 	//puts("Int#0x20: Timer Interrupt!\n");
 }
 

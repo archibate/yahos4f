@@ -69,7 +69,7 @@ struct segdesc {
 
 /************* END **************/
 
-#define GDT_NR		4
+#define GDT_NR		6
 extern struct segdesc gdt[GDT_NR];
 
 void init_gdt(void);
