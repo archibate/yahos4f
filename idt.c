@@ -18,13 +18,14 @@ void on_soft_interrupt(void)
 void asm_on_keyboard(void); /* In ientry.asm */
 void on_keyboard(void)
 {
-	puts("Int#0x21: Keyboard Interrupt!\n");
+	//puts("Int#0x21: Keyboard Interrupt!\n");
+	kb_handler();
 }
 
 void asm_on_timer(void); /* In ientry.asm */
 void on_timer(void)
 {
-	puts("Int#0x20: Timer Interrupt!\n");
+	//puts("Int#0x20: Timer Interrupt!\n");
 }
 
 void init_idt(void)
