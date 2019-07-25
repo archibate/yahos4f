@@ -13,7 +13,7 @@ void init_tss(void)
 	tss0.ts_iomb = sizeof(struct tss) - 1;
 	tss0.ts_iomap[0] = 0xff;
 
-	gdt[5] = SEGD16(STS_T32A, (unsigned long) &tss0, sizeof(struct tss), 0);
+	gdt[5] = SEGD16(STS_T32A, (unsigned long)&tss0, sizeof(struct tss), 0);
 	gdt[5].sd_s = 0;
 
 	asm volatile ("ltr %%ax" :: "a" (0x28));

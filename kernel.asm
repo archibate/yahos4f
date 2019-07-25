@@ -8,7 +8,9 @@ MB_FLAGS	equ	0
 
 global _start
 extern main
+extern setup_pagging
 _start:
+	call setup_pagging
 	call main
 	cli
 	hlt
