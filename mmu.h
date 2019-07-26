@@ -13,3 +13,5 @@
 #define PG_PSE 0x80    // PDE: Page Size Extension (unused)
 
 #define PGMASK 0xfffff000 // Address Mask
+
+void init_mmu(void);

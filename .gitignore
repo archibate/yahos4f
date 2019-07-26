@@ -3,3 +3,4 @@ kernel
 .*.sw*
 .*.un*
 *~
+*.old
