@@ -11,11 +11,14 @@ void __attribute__((fastcall)) switch_context(struct cont *prev, struct cont *ne
 
 struct task
 {
+	struct task *next, *prev;
 	struct cont ctx;
 	void *stack;
 };
 
 void init_sched(void);
+void task_yield(void);
+void task_join(struct task *next);
 void task_run(struct task *next);
 void __attribute__((noreturn)) task_exit(int status);
 struct task *create_task(int (*proc)(void *), void *arg);

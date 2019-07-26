@@ -1,5 +1,6 @@
 #include "idt.h"
 #include "console.h"
+#include "sched.h"
 #include "keybd.h"
 #include "pic.h"
 
@@ -28,6 +29,7 @@ void on_keyboard(void)
 void asm_on_timer(void); /* In ientry.asm */
 void on_timer(void)
 {
+	task_yield();
 	irq_done(0);
 	//puts("Int#0x20: Timer Interrupt!\n");
 }

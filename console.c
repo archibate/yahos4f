@@ -71,7 +71,7 @@ static void scroll_up(int n)
 
 int putchar(int c)
 {
-	if (c == '\n') {
+	if (c == '\n' || cx > nx) {
 		cx = 0;
 		cy++;
 		if (cy >= ny) {
