@@ -6,6 +6,13 @@
 #include "pit.h"
 #include "mmu.h"
 #include "mman.h"
+#include "sched.h"
+
+int test_proc(void *arg)
+{
+	puts("\nTest Thread Started!\n");
+	return 0;
+}
 
 void main(void)
 {
@@ -19,10 +26,9 @@ void main(void)
 	set_timer_freq(10);
 
 	init_mman();
-	void *p = malloc(10);
-	void *q = malloc(20);
-	free(p);
-	free(q);
+	init_sched();
+	struct task *test_task = create_task(test_proc, 0);
+	task_run(test_task);
 
 	puts("\nEnabling Hardware Interrupt...\n");
 	irq_setenable(0, 1);

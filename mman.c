@@ -3,10 +3,8 @@
 
 #define GAP1_MAGIC	0xfefdfced
 #define GAP2_MAGIC	0xfdfeeffd
-#define MB_SIZE		8192
 
-static char mbuffer[MB_SIZE];
-static void *mptr = mbuffer;
+static void *mptr = (void *)0x200000;
 
 void init_mman(void)
 {
@@ -21,6 +19,8 @@ void *malloc(unsigned long size)
 	up = p + size;
 	*up++ = GAP2_MAGIC;
 	mptr = up;
+	for (char *q = p; (void *)q < p + size; q++)
+		*q = 0;
 	return p;
 }
 
@@ -42,5 +42,7 @@ unsigned long mcheck(void *p)
 
 void free(void *p)
 {
-	mcheck(p);
+	unsigned long size = mcheck(p);
+	for (char *q = p; (void *)q < p + size; q++)
+		*q = 0xcc;
 }
