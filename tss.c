@@ -1,8 +1,9 @@
 #include "tss.h"
 #include "gdt.h"
 #include "idt.h"
+#include "sched.h"
 
-static char ____temp_stack[2048];
+static char ____temp_stack[8192];
 
 struct tss tss0;
 
@@ -17,4 +18,9 @@ void init_tss(void)
 	gdt[5].sd_s = 0;
 
 	asm volatile ("ltr %%ax" :: "a" (0x28));
+}
+
+void __int_leave(void)
+{
+	tss0.ts_esp0 = (unsigned long)(current->stack + STACK_SIZE);
 }

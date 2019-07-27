@@ -34,12 +34,24 @@ void on_timer(void)
 	//puts("Int#0x20: Timer Interrupt!\n");
 }
 
+void asm_on_syscall(void); /* In ientry.asm */
+void on_syscall(void)
+{
+	//task_yield();
+	//irq_done(0);
+	//puts("Int#0x80: System Call\n");
+	setcolor(0xc);
+	puts("O");
+	asm volatile ("sti\nhlt\ncli");
+}
+
 void init_idt(void)
 {
 	SETGATE(idt[0x00], 0, 0x08, on_divide_by_zero_error, 0);
 	SETGATE(idt[0x80], 0, 0x08, asm_on_soft_interrupt, 0);
 	SETGATE(idt[0x21], 0, 0x08, asm_on_keyboard, 0);
 	SETGATE(idt[0x20], 0, 0x08, asm_on_timer, 0);
+	SETGATE(idt[0x80], 0, 0x08, asm_on_syscall, 3);
 	static struct idtr {
 		unsigned short limit;
 		unsigned long base;

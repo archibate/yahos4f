@@ -13,6 +13,7 @@
 int test_proc(void *arg)
 {
 	static char user_stack[8192];
+	setcolor(0xf);
 	puts("\nTest Thread Started!\nNow moving to user...\n");
 	extern void usr_test_start(void); // in usr/test.asm
 	move_to_user(usr_test_start, user_stack + sizeof(user_stack), FL_1F | FL_IF);
@@ -40,6 +41,8 @@ void main(void)
 
 	asm volatile ("sti");
 	for (;;) {
+		setcolor(0xa);
+		puts("K");
 		asm volatile ("hlt");
 	}
 }

@@ -13,8 +13,11 @@ struct task
 {
 	struct task *next, *prev;
 	struct cont ctx;
+#define STACK_SIZE	8192
 	void *stack;
 };
+
+extern struct task *current;
 
 void init_sched(void);
 void task_yield(void);
