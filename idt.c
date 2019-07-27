@@ -40,8 +40,8 @@ void on_syscall(PUSHAD_ARGS)
 {
 	switch (eax) {
 	case 1:
-		setcolor(0xc);
-		puts("O");
+		setcolor(ecx);
+		puts((const char *)edx);
 		break;
 	case 2:
 		task_yield();

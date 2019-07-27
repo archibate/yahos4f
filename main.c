@@ -10,13 +10,13 @@
 #include "user.h"
 #include "eflags.h"
 
-int test_proc(void *arg)
+int test_proc(int arg)
 {
 	static char user_stack[8192];
 	setcolor(0xf);
 	puts("\nTest Thread Started!\nNow moving to user...\n");
 	extern void usr_test_start(void); // in usr/test.asm
-	move_to_user(usr_test_start, user_stack + sizeof(user_stack), FL_1F | FL_IF);
+	move_to_user(usr_test_start, user_stack + sizeof(user_stack), FL_1F | FL_IF | (arg?FL_CF:0));
 }
 
 void main(void)
@@ -32,8 +32,8 @@ void main(void)
 
 	init_mman();
 	init_sched();
-	struct task *test_task = create_task(test_proc, 0);
-	task_join(test_task);
+	task_join(create_task(test_proc, (void *)1));
+	task_join(create_task(test_proc, (void *)0));
 
 	puts("\nEnabling Hardware Interrupt...\n");
 	irq_setenable(0, 1);
@@ -41,8 +41,8 @@ void main(void)
 
 	asm volatile ("sti");
 	for (;;) {
-		setcolor(0xa);
-		puts("K");
+		setcolor(0x0f);
+		puts(";");
 		asm volatile ("hlt");
 	}
 }

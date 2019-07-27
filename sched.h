@@ -24,4 +24,4 @@ void task_yield(void);
 void task_join(struct task *next);
 void task_run(struct task *next);
 void __attribute__((noreturn)) task_exit(int status);
-struct task *create_task(int (*proc)(void *), void *arg);
+struct task *create_task(void *proc, void *arg);

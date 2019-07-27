@@ -24,7 +24,7 @@ static void __task_return_proc(void)
 	task_exit(status);
 }
 
-struct task *create_task(int (*proc)(void *), void *arg)
+struct task *create_task(void *proc, void *arg)
 {
 	void *stack = malloc(STACK_SIZE);
 	struct task *task = malloc(sizeof(struct task));
@@ -43,10 +43,10 @@ struct task *create_task(int (*proc)(void *), void *arg)
 
 void task_join(struct task *task)
 {
-	task->next = current->next->next;
+	task->next = current->next;
 	current->next->prev = task;
-	current->next = task;
 	task->prev = current;
+	current->next = task;
 }
 
 void task_run(struct task *next)
