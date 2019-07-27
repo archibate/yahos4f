@@ -3,6 +3,7 @@
 #include "sched.h"
 #include "keybd.h"
 #include "pic.h"
+#include "pushad.h"
 
 struct gatedesc idt[IDT_NR];
 
@@ -35,14 +36,17 @@ void on_timer(void)
 }
 
 void asm_on_syscall(void); /* In ientry.asm */
-void on_syscall(void)
+void on_syscall(PUSHAD_ARGS)
 {
-	//task_yield();
-	//irq_done(0);
-	//puts("Int#0x80: System Call\n");
-	setcolor(0xc);
-	puts("O");
-	asm volatile ("sti\nhlt\ncli");
+	switch (eax) {
+	case 1:
+		setcolor(0xc);
+		puts("O");
+		break;
+	case 2:
+		task_yield();
+		break;
+	}
 }
 
 void init_idt(void)
