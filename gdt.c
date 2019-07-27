@@ -21,7 +21,7 @@ void init_gdt(void)
 	};
 	asm volatile ("lgdt (%0)" :: "r" (&gdtr));
 	asm volatile (
-				"mov %0, %%ss\n"
+			"mov %0, %%ss\n"
 			"mov %0, %%ds\n"
 			"mov %0, %%es\n"
 			"mov %0, %%fs\n"

@@ -39,6 +39,7 @@ struct task *create_task(int (*proc)(void *), void *arg)
 	task->stack = stack;
 	task->ctx.sp = (unsigned long)sp;
 	task->ctx.eflags = FL_1F;
+	task->prev = task->next = task;
 	return task;
 }
 

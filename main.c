@@ -7,25 +7,22 @@
 #include "mmu.h"
 #include "mman.h"
 #include "sched.h"
+#include "user.h"
+#include "eflags.h"
 
 int test_proc(void *arg)
 {
-	setcolor(0xf);
-	puts("\nTest Thread Started!\n");
-	asm volatile ("sti");
-	for (;;) {
-		setcolor(0xd);
-		puts("B");
-		asm volatile ("hlt");
-	}
-	return 0;
+	static char user_stack[8192];
+	puts("\nTest Thread Started!\nNow moving to user...\n");
+	extern void usr_test_start(void); // in usr/test.asm
+	move_to_user(usr_test_start, user_stack + sizeof(user_stack), FL_1F | FL_IF);
 }
 
 void main(void)
 {
 	clear();
 	puts("Kernel Started...\n");
-	init_mmu();
+	//init_mmu();
 	init_gdt();
 	init_idt();
 	init_pic();
@@ -43,8 +40,6 @@ void main(void)
 
 	asm volatile ("sti");
 	for (;;) {
-		setcolor(0xe);
-		puts("A");
 		asm volatile ("hlt");
 	}
 }
