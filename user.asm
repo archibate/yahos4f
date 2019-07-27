@@ -5,7 +5,6 @@ global move_to_user
 extern __int_leave
 move_to_user:
 	cli
-	call __int_leave
 	mov eax, 0x23
 	mov ds, ax
 	mov es, ax
@@ -17,6 +16,7 @@ move_to_user:
 	push ebx	; eflags
 	push dword 0x1b	; cs
 	push ecx	; eip
+	call __int_leave
 	xor eax, eax
 	mov ecx, eax
 	mov edx, eax
