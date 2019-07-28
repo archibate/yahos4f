@@ -7,7 +7,7 @@ struct task *current;
 
 void init_sched(void)
 {
-	current = malloc(sizeof(struct task));
+	current = calloc(1, sizeof(struct task));
 	current->next = current->prev = current;
 }
 
@@ -27,7 +27,7 @@ static void __task_return_proc(void)
 struct task *create_task(void *proc, void *arg1, void *arg2)
 {
 	void *stack = malloc(STACK_SIZE);
-	struct task *task = malloc(sizeof(struct task));
+	struct task *task = calloc(1, sizeof(struct task));
 	task->stack = stack;
 
 	void **sp = stack + STACK_SIZE;
