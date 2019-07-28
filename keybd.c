@@ -1,12 +1,28 @@
 #include "keybd.h"
 #include "console.h"
 #include "io.h"
+#include "fifo.h"
+#include "sched.h"
+
+static struct fifo kb_fifo;
+
+int getchar(void)
+{
+	while (fifo_empty(&kb_fifo)) {
+		task_yield();
+		if (!fifo_empty(&kb_fifo))
+			break;
+		asm volatile ("sti\nhlt\ncli");
+	}
+	return fifo_get(&kb_fifo);
+}
 
 static void kb_putchar(int c)
 {
-	static char s[2];
-	s[0] = c;
-	puts(s);
+	if (fifo_full(&kb_fifo))
+		return;
+	putchar(c);
+	fifo_put(&kb_fifo, c);
 }
 
 // Keyboard Map {{{

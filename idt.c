@@ -1,5 +1,6 @@
 #include "idt.h"
 #include "console.h"
+#include "keybd.h"
 #include "sched.h"
 #include "keybd.h"
 #include "pic.h"
@@ -48,6 +49,9 @@ void on_syscall(PUSHAD_ARGS)
 		break;
 	case 3:
 		asm volatile ("sti\nhlt\ncli");
+		break;
+	case 4:
+		eax = getchar();
 		break;
 	}
 }
