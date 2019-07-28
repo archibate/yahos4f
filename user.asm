@@ -1,6 +1,6 @@
 ; user.asm
 
-; void __attribute__((noreturn, fastcall)) move_to_user(void *pc, void *sp, unsigned int eflags);
+; void __attribute__((noreturn, fastcall)) move_to_user(void *sp, unsigned int eflags);
 global move_to_user
 extern __int_leave
 move_to_user:
@@ -10,12 +10,11 @@ move_to_user:
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
-	mov ebx, [esp + 4]
 	push eax	; ss
-	push edx	; esp
-	push ebx	; eflags
+	push ecx	; esp
+	push edx	; eflags
 	push dword 0x1b	; cs
-	push ecx	; eip
+	push dword .ret	; eip
 	call __int_leave
 	xor eax, eax
 	mov ecx, eax
@@ -25,3 +24,5 @@ move_to_user:
 	mov edi, eax
 	mov ebp, eax
 	iretd
+.ret:
+	ret

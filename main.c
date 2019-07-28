@@ -10,21 +10,20 @@
 #include "user.h"
 #include "eflags.h"
 
-int echo_proc(const char *msg)
+void __attribute__((noreturn)) __user_task_created(void *sp)
 {
-	static char user_stack[8192];
+	move_to_user(sp, FL_1F | FL_IF);
+}
+
+struct task *create_user_task(void *proc, void *arg)
+{
+	char *user_stack = malloc(4096);
 	setcolor(0xf);
-	puts("\nEcho Thread Started!\nNow moving to user...\n");
 	void **sp = (void *)user_stack + sizeof(user_stack);
-	puts("The user message is: ");
-	setcolor(0xe);
-	puts(msg);
-	setcolor(0xf);
-	puts("\n");
-	*--sp = msg;
+	*--sp = arg;
 	*--sp = 0;
-	extern void usr_echo_main(void); // in usr/echo.c
-	move_to_user(usr_echo_main, sp, FL_1F | FL_IF);
+	*--sp = proc;
+	return create_task(__user_task_created, sp);
 }
 
 void main(void)
@@ -40,7 +39,8 @@ void main(void)
 
 	init_mman();
 	init_sched();
-	task_join(create_task(echo_proc, "Hello, World!"));
+	extern void usr_echo_main(void); // in usr/echo.c
+	task_join(create_user_task(usr_echo_main, "Hello, World!"));
 
 	puts("\nEnabling Hardware Interrupt...\n");
 	irq_setenable(0, 1);
