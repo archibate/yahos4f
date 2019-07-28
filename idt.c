@@ -46,6 +46,9 @@ void on_syscall(PUSHAD_ARGS)
 	case 2:
 		task_yield();
 		break;
+	case 3:
+		asm volatile ("sti\nhlt\ncli");
+		break;
 	}
 }
 

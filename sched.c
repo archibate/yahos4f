@@ -24,14 +24,15 @@ static void __task_return_proc(void)
 	task_exit(status);
 }
 
-struct task *create_task(void *proc, void *arg)
+struct task *create_task(void *proc, void *arg1, void *arg2)
 {
 	void *stack = malloc(STACK_SIZE);
 	struct task *task = malloc(sizeof(struct task));
 	task->stack = stack;
 
 	void **sp = stack + STACK_SIZE;
-	*--sp = arg;
+	*--sp = arg2;
+	*--sp = arg1;
 	*--sp = __task_return_proc;
 	*--sp = proc;
 

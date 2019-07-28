@@ -10,20 +10,15 @@
 #include "user.h"
 #include "eflags.h"
 
-void __attribute__((noreturn)) __user_task_created(void *sp)
+void exec_user(void *proc, void *arg)
 {
-	move_to_user(sp, FL_1F | FL_IF);
-}
-
-struct task *create_user_task(void *proc, void *arg)
-{
-	char *user_stack = malloc(4096);
-	setcolor(0xf);
-	void **sp = (void *)user_stack + sizeof(user_stack);
+#define USER_STACK_SIZE	4096
+	char *user_stack = malloc(USER_STACK_SIZE);
+	void **sp = (void *)user_stack + USER_STACK_SIZE;
 	*--sp = arg;
 	*--sp = 0;
 	*--sp = proc;
-	return create_task(__user_task_created, sp);
+	move_to_user(sp, FL_1F | FL_IF);
 }
 
 void main(void)
@@ -40,7 +35,8 @@ void main(void)
 	init_mman();
 	init_sched();
 	extern void usr_echo_main(void); // in usr/echo.c
-	task_join(create_user_task(usr_echo_main, "Hello, World!"));
+	task_join(create_task(exec_user, usr_echo_main, "Hello, World!\n"));
+	task_join(create_task(exec_user, usr_echo_main, "Hello, Moto!\n"));
 
 	puts("\nEnabling Hardware Interrupt...\n");
 	irq_setenable(0, 1);
