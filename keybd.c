@@ -10,9 +10,9 @@ int getchar(void)
 {
 	while (fifo_empty(&kb_fifo)) {
 		task_yield();
+		asm volatile ("sti\nnop\ncli");
 		if (!fifo_empty(&kb_fifo))
 			break;
-		asm volatile ("sti\nhlt\ncli");
 	}
 	return fifo_get(&kb_fifo);
 }
