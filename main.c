@@ -35,8 +35,14 @@ void main(void)
 	init_mman();
 	init_sched();
 	extern void usr_echo_main(void); // in usr/echo.c
-	task_join(create_task(exec_user, usr_echo_main, "Hello, World!\n"));
-	task_join(create_task(exec_user, usr_echo_main, "Hello, Moto!\n"));
+	task_join(create_task(exec_user, usr_echo_main, "\a00"));
+	task_join(create_task(exec_user, usr_echo_main, "\a11"));
+	task_join(create_task(exec_user, usr_echo_main, "\a22"));
+	task_join(create_task(exec_user, usr_echo_main, "\a33"));
+	task_join(create_task(exec_user, usr_echo_main, "\a44"));
+	task_join(create_task(exec_user, usr_echo_main, "\a55"));
+	task_join(create_task(exec_user, usr_echo_main, "\a66"));
+	task_join(create_task(exec_user, usr_echo_main, "\a77"));
 
 	puts("\nEnabling Hardware Interrupt...\n");
 	irq_setenable(0, 1);
