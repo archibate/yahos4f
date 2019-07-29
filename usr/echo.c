@@ -1,3 +1,5 @@
+#include "api.h"
+
 void usr_echo_main(const char *msg)
 {
 	int color = 0xf;
@@ -5,9 +7,9 @@ void usr_echo_main(const char *msg)
 		color = 0x8 + (msg[1] - '0');
 		msg += 2;
 	}
-	asm volatile ("int $0x80" :: "a" (4));
+	getchar();
 	for (;;) {
-		asm volatile ("int $0x80" :: "a" (1), "c" (color), "d" (msg));
-		asm volatile ("int $0x80" :: "a" (3));
+		cputs(color, msg);
+		wfi();
 	}
 }

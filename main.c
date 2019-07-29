@@ -34,7 +34,9 @@ void main(void)
 
 	init_mman();
 	init_sched();
-	extern void usr_echo_main(void); // in usr/echo.c
+	extern void usr_echo_main(); // in usr/echo.c
+	extern void usr_chkdsk_main(); // in usr/chkdsk.c
+	task_join(create_task(exec_user, usr_chkdsk_main, 0));
 	task_join(create_task(exec_user, usr_echo_main, "\a00"));
 	task_join(create_task(exec_user, usr_echo_main, "\a11"));
 	task_join(create_task(exec_user, usr_echo_main, "\a22"));

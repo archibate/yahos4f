@@ -2,9 +2,7 @@
 #include "console.h"
 #include "keybd.h"
 #include "sched.h"
-#include "keybd.h"
 #include "pic.h"
-#include "pushad.h"
 
 struct gatedesc idt[IDT_NR];
 
@@ -37,24 +35,6 @@ void on_timer(void)
 }
 
 void asm_on_syscall(void); /* In ientry.asm */
-void on_syscall(PUSHAD_ARGS)
-{
-	switch (eax) {
-	case 1:
-		setcolor(ecx);
-		puts((const char *)edx);
-		break;
-	case 2:
-		task_yield();
-		break;
-	case 3:
-		asm volatile ("sti\nhlt\ncli");
-		break;
-	case 4:
-		eax = getchar();
-		break;
-	}
-}
 
 void init_idt(void)
 {
