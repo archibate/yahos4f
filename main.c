@@ -1,13 +1,14 @@
-#include "console.h"
-#include "gdt.h"
-#include "idt.h"
-#include "tss.h"
-#include "pic.h"
-#include "pit.h"
-#include "mmu.h"
-#include "mman.h"
-#include "sched.h"
-#include "time.h"
+#include <linux/console.h>
+#include <linux/gdt.h>
+#include <linux/idt.h>
+#include <linux/tss.h>
+#include <linux/pic.h>
+#include <linux/pit.h>
+#include <linux/mmu.h>
+#include <linux/mman.h>
+#include <linux/sched.h>
+#include <linux/cmos.h>
+#include <stdio.h>
 
 void main(void)
 {

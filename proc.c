@@ -1,7 +1,7 @@
-#include "sched.h"
-#include "mman.h"
-#include "fail.h"
-#include "eflags.h"
+#include <linux/sched.h>
+#include <linux/mman.h>
+#include <linux/fail.h>
+#include <linux/eflags.h>
 #include <stddef.h>
 
 static int last_pid = 0;

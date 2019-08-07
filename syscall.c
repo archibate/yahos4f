@@ -1,5 +1,5 @@
-#include "pushad.h"
-#include "sched.h"
+#include <linux/pushad.h>
+#include <linux/sched.h>
 
 /* keep sync with usr/api.h */
 

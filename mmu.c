@@ -1,4 +1,4 @@
-#include "mmu.h"
+#include <linux/mmu.h>
 
 #define BOOT_PTS_NR (0x400000 / (4096*1024))
 

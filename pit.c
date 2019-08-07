@@ -1,5 +1,5 @@
-#include "pit.h"
-#include "io.h"
+#include <linux/pit.h>
+#include <linux/io.h>
 
 // https://github.com/archibate/OS67/blob/master/kern/timer.c
 #define IO_PIT_CNTL  0x43

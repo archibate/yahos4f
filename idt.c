@@ -1,8 +1,8 @@
-#include "idt.h"
-#include "console.h"
-#include "keybd.h"
-#include "sched.h"
-#include "pic.h"
+#include <linux/idt.h>
+#include <linux/console.h>
+#include <linux/keybd.h>
+#include <linux/sched.h>
+#include <linux/pic.h>
 
 struct gatedesc idt[IDT_NR];
 

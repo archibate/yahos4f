@@ -1,6 +1,6 @@
 // https://github.com/archibate/Linux011/blob/master/src/V0.11/init/main.c
-#include "time.h"
-#include "io.h"
+#include <linux/cmos.h>
+#include <linux/io.h>
 
 #define IO_CMOS	0x70
 
