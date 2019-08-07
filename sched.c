@@ -1,63 +1,89 @@
 #include "sched.h"
-#include "mman.h"
-#include "eflags.h"
-#include "console.h"
+#include <stddef.h>
+#include "fail.h"
 
+struct task *task[NR_TASKS];
 struct task *current;
+
+void switch_to(int i)
+{
+	struct task *previous;
+	if (current != task[i]) {
+		previous = current;
+		current = task[i];
+		switch_context(&previous->ctx, &current->ctx);
+	}
+}
+
+void schedule(void)
+{
+	int next;
+	while (1) {
+		next = 0;
+		int c = -1;
+		for (int i = NR_TASKS - 1; i >= 0; i--) {
+			struct task *p = task[i];
+			if (p->state == TASK_RUNNING && p->counter > c)
+				c = p->counter, next = i;
+		}
+		if (c) break;
+		for (int i = NR_TASKS - 1; i >= 0; i--) {
+			struct task *p = task[i];
+			if (p) p->counter = (p->counter >> 1) + p->priority;
+		}
+	}
+	switch_to(next);
+}
+
+int sys_pause(void)
+{
+	current->state = TASK_INTRIB;
+	schedule();
+	return 0;
+}
+
+void sleep_on(struct task **p)
+{
+	struct task *old = *p;
+	*p = current;
+	current->state = TASK_UNINTRIB;
+	schedule();
+	if (old) old->state = 0;
+}
+
+void intrib_sleep_on(struct task **p)
+{
+	struct task *old = *p;
+	*p = current;
+repeat:	current->state = TASK_INTRIB;
+	schedule();
+	if (*p && *p != current) {
+		(*p)->state = 0;
+		goto repeat;
+	}
+	*p = NULL;
+	if (old) old->state = 0;
+}
+
+void wake_up(struct task **p)
+{
+	if (!*p) return;
+	(*p)->state = 0;
+	*p = NULL;
+}
+
+int sys_getpid(void)
+{
+	return current->pid;
+}
+
+int sys_getppid(void)
+{
+	return current->ppid;
+}
 
 void init_sched(void)
 {
-	current = calloc(1, sizeof(struct task));
-	current->next = current->prev = current;
-}
-
-void __attribute__((noreturn)) task_exit(int status)
-{
-	puts("task exited\n");
-	for (;;)
-		task_yield();
-}
-
-static void __task_return_proc(void)
-{
-	register int status asm ("eax");
-	task_exit(status);
-}
-
-struct task *create_task(void *proc, void *arg1, void *arg2)
-{
-	void *stack = malloc(STACK_SIZE);
-	struct task *task = calloc(1, sizeof(struct task));
-	task->stack = stack;
-
-	void **sp = stack + STACK_SIZE;
-	*--sp = arg2;
-	*--sp = arg1;
-	*--sp = __task_return_proc;
-	*--sp = proc;
-
-	task->ctx.sp = (unsigned long)sp;
-	task->ctx.eflags = FL_1F;
-	task->prev = task->next = task;
-	return task;
-}
-
-void task_join(struct task *task)
-{
-	task->next = current->next;
-	current->next->prev = task;
-	task->prev = current;
-	current->next = task;
-}
-
-void task_run(struct task *next)
-{
-	struct task *prev = current;
-	current = next;
-	switch_context(&prev->ctx, &current->ctx);
-}
-
-void task_yield(void)
-{
-	task_run(current->next);
+	static struct task initial_task = INITIAL_TASK;
+	current = task[0] = &initial_task;
 }

@@ -5,11 +5,12 @@
 #include "sched.h"
 
 static struct fifo kb_fifo;
+static struct task *kb_wait;
 
 int getchar(void)
 {
 	while (fifo_empty(&kb_fifo)) {
-		task_yield();
+		sleep_on(&kb_wait);
 		asm volatile ("sti\nnop\ncli");
 		if (!fifo_empty(&kb_fifo))
 			break;
@@ -23,6 +24,7 @@ static void kb_putchar(int c)
 		return;
 	putchar(c);
 	fifo_put(&kb_fifo, c);
+	wake_up(&kb_wait);
 }
 
 // Keyboard Map {{{

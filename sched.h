@@ -1,27 +1,39 @@
 #pragma once
 
-struct cont
-{
-	unsigned long sp;
-	unsigned long bx, si, di, bp;
-	unsigned long eflags;
-} __attribute__((packed));
+#include "context.h"
 
-void __attribute__((fastcall)) switch_context(struct cont *prev, struct cont *next);
+#define TASK_RUNNING	0
+#define TASK_INTRIB	1
+#define TASK_UNINTRIB	2
+#define TASK_ZOMBIE	3
+#define TASK_STOPPED	4
 
-struct task
-{
-	struct task *next, *prev;
+struct task {
+	int state;
+	int counter;
+	int priority;
+	int exit_code;
+	int pid, ppid;
 	struct cont ctx;
 #define STACK_SIZE	8192
 	void *stack;
 };
 
+#define INITIAL_TASK	{ \
+		.priority = 1, \
+		.counter = 1, \
+		.pid = 0, \
+	}
+
+#define NR_TASKS	64
+extern struct task *task[NR_TASKS];
 extern struct task *current;
 
 void init_sched(void);
-void task_yield(void);
-void task_join(struct task *next);
-void task_run(struct task *next);
-void __attribute__((noreturn)) task_exit(int status);
-struct task *create_task(void *proc, void *arg1, void *arg2);
+void schedule(void);
+int sys_pause(void);
+void sleep_on(struct task **p);
+void intrib_sleep_on(struct task **p);
+void wake_up(struct task **p);
+int sys_getpid(void);
+int sys_getppid(void);

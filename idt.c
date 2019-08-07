@@ -29,7 +29,7 @@ void on_keyboard(void)
 void asm_on_timer(void); /* In ientry.asm */
 void on_timer(void)
 {
-	task_yield();
+	schedule();
 	irq_done(0);
 	//puts("Int#0x20: Timer Interrupt!\n");
 }
