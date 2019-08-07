@@ -12,7 +12,6 @@ struct task {
 	int state;
 	int counter;
 	int priority;
-	int exit_code;
 	int pid, ppid;
 	struct cont ctx;
 #define STACK_SIZE	8192

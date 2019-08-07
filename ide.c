@@ -1,6 +1,6 @@
-#include "ide.h"
-#include "fail.h"
-#include "io.h"
+#include <linux/ide.h>
+#include <linux/fail.h>
+#include <linux/io.h>
 
 /* Status */
 #define IDE_BSY     0x80    // Busy

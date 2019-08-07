@@ -1,7 +1,7 @@
-#include "sched.h"
-#include "mman.h"
-#include "fail.h"
-#include "eflags.h"
+#include <linux/sched.h>
+#include <linux/mman.h>
+#include <linux/fail.h>
+#include <linux/eflags.h>
 #include <stddef.h>
 
 static int last_pid = 0;
@@ -44,7 +44,6 @@ struct task *new_task(struct task *parent)
 
 void __attribute__((noreturn)) sys_exit(int status)
 {
-	current->exit_code = status;
 	free(current);
 	current = NULL;
 	schedule();

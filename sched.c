@@ -1,6 +1,6 @@
-#include "sched.h"
+#include <linux/sched.h>
+#include <linux/fail.h>
 #include <stddef.h>
-#include "fail.h"
 
 struct task *task[NR_TASKS];
 struct task *current;

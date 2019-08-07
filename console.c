@@ -1,5 +1,5 @@
-#include "console.h"
-#include "io.h"
+#include <linux/console.h>
+#include <linux/io.h>
 
 static short *const vram = (short *)0xb8000;
 static int cx, cy;

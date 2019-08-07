@@ -1,5 +1,5 @@
-#include "pic.h"
-#include "io.h"
+#include <linux/pic.h>
+#include <linux/io.h>
 
 #define IO_PIC0  0x20
 #define IO_PIC1  0xa0

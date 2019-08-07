@@ -1,16 +1,16 @@
-#include "tss.h"
-#include "gdt.h"
-#include "idt.h"
-#include "sched.h"
+#include <linux/tss.h>
+#include <linux/gdt.h>
+#include <linux/idt.h>
+#include <linux/sched.h>
 
-static char ____temp_stack[8192];
+static char ____tmp_kstack[8192];
 
 struct tss tss0;
 
 void init_tss(void)
 {
 	tss0.ts_ss0 = 0x10;
-	tss0.ts_esp0 = (unsigned long)(____temp_stack + sizeof(____temp_stack));
+	tss0.ts_esp0 = (unsigned long)(____tmp_kstack + sizeof(____tmp_kstack));
 	tss0.ts_iomb = sizeof(struct tss) - 1;
 	tss0.ts_iomap[0] = 0xff;
 

@@ -1,4 +1,4 @@
-#include "gdt.h"
+#include <linux/gdt.h>
 
 struct segdesc gdt[GDT_NR] =
 {

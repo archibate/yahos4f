@@ -1,5 +1,5 @@
-#include "fail.h"
-#include "console.h"
+#include <linux/fail.h>
+#include <linux/console.h>
 
 void __attribute__((noreturn)) fail(const char *msg)
 {

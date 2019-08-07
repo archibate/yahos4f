@@ -1,8 +1,8 @@
-#include "keybd.h"
-#include "console.h"
-#include "io.h"
-#include "fifo.h"
-#include "sched.h"
+#include <linux/keybd.h>
+#include <linux/console.h>
+#include <linux/io.h>
+#include <linux/fifo.h>
+#include <linux/sched.h>
 
 static struct fifo kb_fifo;
 static struct task *kb_wait;
