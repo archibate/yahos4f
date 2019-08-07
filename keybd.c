@@ -10,8 +10,7 @@ static struct task *kb_wait;
 int getchar(void)
 {
 	while (fifo_empty(&kb_fifo)) {
-		sleep_on(&kb_wait);
-		asm volatile ("sti\nnop\ncli");
+		intrib_sleep_on(&kb_wait);
 		if (!fifo_empty(&kb_fifo))
 			break;
 	}

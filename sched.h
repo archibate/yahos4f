@@ -22,7 +22,7 @@ struct task {
 #define INITIAL_TASK	{ \
 		.priority = 1, \
 		.counter = 1, \
-		.pid = 0, \
+		.pid = 1, \
 	}
 
 #define NR_TASKS	64
@@ -37,3 +37,6 @@ void intrib_sleep_on(struct task **p);
 void wake_up(struct task **p);
 int sys_getpid(void);
 int sys_getppid(void);
+struct task *new_task(struct task *parent);
+struct task *setup_task(struct task *p, void *start, void *arg);
+void __attribute__((noreturn)) sys_exit(int status);

@@ -72,16 +72,6 @@ void wake_up(struct task **p)
 	*p = NULL;
 }
 
-int sys_getpid(void)
-{
-	return current->pid;
-}
-
-int sys_getppid(void)
-{
-	return current->ppid;
-}
-
 void init_sched(void)
 {
 	static struct task initial_task = INITIAL_TASK;
