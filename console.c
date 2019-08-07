@@ -77,6 +77,8 @@ int putchar(int c)
 		if (cy >= ny) {
 			scroll_up(cy - ny + 1);
 		}
+	} else if (c == '\r') {
+		cx = 0;
 	} else {
 		vram[cy * nx + cx] = color | c;
 		cx++;

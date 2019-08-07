@@ -7,19 +7,8 @@
 #include "mmu.h"
 #include "mman.h"
 #include "sched.h"
-#include "keybd.h"
+#include "time.h"
 
-void func(int i)
-{
-	while (1) {
-		setcolor(0x8 + i);
-		char c[2];
-		c[0] = '0' + i;
-		c[1] = 0;
-		puts(c);
-		for (volatile int j = 0; j < 500000; j++);
-	}
-}
 void main(void)
 {
 	clear();
@@ -35,12 +24,14 @@ void main(void)
 	irq_setenable(0, 1);
 	irq_setenable(1, 1);
 
-	for (int i = 0; i < 8; i++) {
-		setup_task(new_task(current), func, (void*)i)->priority = 1;
-	}
-
 	asm volatile ("sti");
 	for (;;) {
+		struct tm t;
+		cmos_gettime(&t);
+		printf("\r%02d/%02d/%02d %02d:%02d:%02d",
+				t.tm_year, t.tm_mon, t.tm_mday,
+				t.tm_hour, t.tm_min, t.tm_sec);
+
 		asm volatile ("hlt");
 	}
 }
