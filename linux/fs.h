@@ -4,12 +4,13 @@
 #define WRITE 1
 
 #define NAME_LEN 14
-#define ROOT_INO 1
-#define ROOT_DEV root_dev
+#define ROOT_INO 2
 
-#define I_MAP_SLOTS 8
-#define Z_MAP_SLOTS 8
-#define SUPER_MAGIC 0x137F
+#define ROOT_DEV root_dev
+#define HDA_DEV 1
+#define HDB_DEV 2
+
+#define SUPER_MAGIC 0xef53
 
 #define NR_OPEN 20
 #define NR_INODE 32
@@ -41,25 +42,51 @@ struct buf {
 struct d_inode {
 	unsigned short i_mode;
 	unsigned short i_uid;
-	unsigned long i_size;
-	unsigned long i_time;
-	unsigned char i_gid;
-	unsigned char i_nlinks;
-	unsigned short i_zone[9];
+	unsigned int i_size;
+	unsigned int i_atime;
+	unsigned int i_ctime;
+	unsigned int i_mtime;
+	unsigned int i_deltime;
+	unsigned short i_gid;
+	unsigned short i_nlinks;
+	unsigned int i_nsectors;
+	unsigned int i_flags;
+	unsigned int i_os_spec1;
+	unsigned int i_zone[11];
+	unsigned int i_s_zone;
+	unsigned int i_d_zone;
+	unsigned int i_t_zone;
+	unsigned int i_gen_num;
+	unsigned int i_reserved1;
+	unsigned int i_reserved2;
+	unsigned int i_frag_block;
+	unsigned char i_os_spec2[12];
 };
 
 struct inode {
 	unsigned short i_mode;
 	unsigned short i_uid;
-	unsigned long i_size;
-	unsigned long i_mtime;
-	unsigned char i_gid;
-	unsigned char i_nlinks;
-	unsigned short i_zone[9];
+	unsigned int i_size;
+	unsigned int i_atime;
+	unsigned int i_ctime;
+	unsigned int i_mtime;
+	unsigned int i_deltime;
+	unsigned short i_gid;
+	unsigned short i_nlinks;
+	unsigned int i_nsectors;
+	unsigned int i_flags;
+	unsigned int i_os_spec1;
+	unsigned int i_zone[11];
+	unsigned int i_s_zone;
+	unsigned int i_d_zone;
+	unsigned int i_t_zone;
+	unsigned int i_gen_num;
+	unsigned int i_reserved1;
+	unsigned int i_reserved2;
+	unsigned int i_frag_block;
+	unsigned char i_os_spec2[12];
 /* these are in memory also */
-	struct task_struct * i_wait;
-	unsigned long i_atime;
-	unsigned long i_ctime;
+	struct task *i_wait;
 	unsigned short i_dev;
 	unsigned short i_num;
 	unsigned short i_count;
@@ -81,36 +108,69 @@ struct file {
 };
 
 struct super_block {
-	unsigned short s_ninodes;
-	unsigned short s_nzones;
-	unsigned short s_imap_blocks;
-	unsigned short s_zmap_blocks;
-	unsigned short s_firstdatazone;
-	unsigned short s_log_zone_size;
-	unsigned long s_max_size;
+	unsigned int s_ninodes;
+	unsigned int s_nblocks;
+	unsigned int s_nblocks_reserved;
+	unsigned int s_nblocks_free;
+	unsigned int s_ninodes_free;
+	unsigned int s_superblock;
+	unsigned int s_log_block_size;
+	unsigned int s_log_frag_size;
+	unsigned int s_blocks_per_group;
+	unsigned int s_frags_per_group;
+	unsigned int s_inodes_per_group;
+	unsigned int s_last_mount_time;
+	unsigned int s_last_written_time;
+	unsigned short s_nmount_times;
+	unsigned short s_nmount_max_times;
 	unsigned short s_magic;
+	unsigned short s_state;
+	unsigned short s_error_handling;
+	unsigned short s_minor;
+	unsigned int s_ccheck_time;
+	unsigned int s_ccheck_interval;
+	unsigned int s_os_id;
+	unsigned int s_major;
+	unsigned short s_reserved_uid;
+	unsigned short s_reserved_gid;
 /* These are only in memory */
-	struct buf *s_imap[8];
-	struct buf *s_zmap[8];
 	unsigned short s_dev;
 	struct inode *s_isup;
 	struct inode *s_imount;
-	unsigned long s_time;
+	unsigned int s_time;
 	struct task *s_wait;
 	unsigned char s_lock;
 	unsigned char s_rd_only;
 	unsigned char s_dirt;
+	unsigned int s_imap_blocks;
 };
 
 struct d_super_block {
-	unsigned short s_ninodes;
-	unsigned short s_nzones;
-	unsigned short s_imap_blocks;
-	unsigned short s_zmap_blocks;
-	unsigned short s_firstdatazone;
-	unsigned short s_log_zone_size;
-	unsigned long s_max_size;
+	unsigned int s_ninodes;
+	unsigned int s_nblocks;
+	unsigned int s_nblocks_reserved;
+	unsigned int s_nblocks_free;
+	unsigned int s_ninodes_free;
+	unsigned int s_superblock;
+	unsigned int s_log_block_size;
+	unsigned int s_log_frag_size;
+	unsigned int s_blocks_per_group;
+	unsigned int s_frags_per_group;
+	unsigned int s_inodes_per_group;
+	unsigned int s_last_mount_time;
+	unsigned int s_last_written_time;
+	unsigned short s_nmount_times;
+	unsigned short s_nmount_max_times;
 	unsigned short s_magic;
+	unsigned short s_state;
+	unsigned short s_error_handling;
+	unsigned short s_minor;
+	unsigned int s_ccheck_time;
+	unsigned int s_ccheck_interval;
+	unsigned int s_os_id;
+	unsigned int s_major;
+	unsigned short s_reserved_uid;
+	unsigned short s_reserved_gid;
 };
 
 struct dir_entry {

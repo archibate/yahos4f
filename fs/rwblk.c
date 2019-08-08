@@ -10,7 +10,7 @@ static inline void lock_buffer(struct buf *b)
 	cli();
 	while (b->b_lock)
 		sleep_on(&b->b_wait);
-	b->b_lock=1;
+	b->b_lock = 1;
 	sti();
 }
 

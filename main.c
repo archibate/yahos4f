@@ -11,11 +11,7 @@
 #include <linux/fs.h>
 #include <stdio.h>
 
-void buffer_test(void)
-{
-	struct buf *b = bread(1, 0);
-	puts(b->b_data);
-}
+int root_dev = HDA_DEV;
 
 void cmos_test(void)
 {
@@ -43,9 +39,9 @@ void main(void)
 	irq_setenable(0, 1);
 	irq_setenable(1, 1);
 
-	asm volatile ("sti");
 	for (;;) {
-		buffer_test();
+		asm volatile ("sti");
+		super_test();
 		asm volatile ("hlt");
 	}
 }

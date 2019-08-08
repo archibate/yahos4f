@@ -2,9 +2,9 @@
 #include <linux/fs.h>
 #include <linux/console.h>
 #include <linux/sched.h>
-#include <linux/fs/super.h>
 #include <linux/cli.h>
 #include <stddef.h>
+#include <stdio.h>
 
 struct super_block super_block[NR_SUPER];
 
@@ -20,6 +20,7 @@ static void lock_super(struct super_block *sb)
 static void free_super(struct super_block *sb)
 {
 	cli();
+	sb->s_lock = 0;
 	wake_up(&sb->s_wait);
 	sti();
 }
@@ -62,10 +63,6 @@ void put_super(int dev)
 	}
 	lock_super(s);
 	s->s_dev = 0;
-	for (int i = 0; i < I_MAP_SLOTS; i++)
-		brelse(s->s_imap[i]);
-	for (int i = 0; i < Z_MAP_SLOTS; i++)
-		brelse(s->s_zmap[i]);
 	free_super(s);
 }
 
@@ -76,9 +73,9 @@ static struct super_block *read_super(int dev)
 	struct super_block *s = get_super(dev);
 	if (s) return s;
 	for (int i = 0;; i++) {
-		s = &super_block[i];
 		if (i >= NR_SUPER)
 			return NULL;
+		s = &super_block[i];
 		if (!s->s_dev)
 			break;
 	}
@@ -89,45 +86,33 @@ static struct super_block *read_super(int dev)
 	s->s_rd_only = 0;
 	s->s_dirt = 0;
 	lock_super(s);
-	struct buf *bh = bread(dev, 1);
-	if (!bh)
-		goto out_free;
-	*(struct d_super_block *)s = *(struct d_super_block *)bh->b_data;
-	brelse(bh);
+	struct buf *b = bread(dev, 1);
+	if (!b)
+		goto out;
+	*(struct d_super_block *)s = *(struct d_super_block *)b->b_data;
+	brelse(b);
+
 	if (s->s_magic != SUPER_MAGIC)
-		goto out_free;
-	for (int i = 0; i < I_MAP_SLOTS; i++)
-		s->s_imap[i] = NULL;
-	for (int i = 0; i < Z_MAP_SLOTS; i++)
-		s->s_zmap[i] = NULL;
-	int block = 2;
-	for (int i = 0; i < s->s_imap_blocks; i++) {
-		s->s_imap[i] = bread(dev, block);
-		if (!s->s_imap[i])
-			break;
-		block++;
+		goto out;
+	if (s->s_log_block_size != BLOCK_SIZE_BITS - 10) {
+		puts("block size other than 1024 unimpelemented\n");
+		goto out;
 	}
-	for (int i = 0; i < s->s_zmap_blocks; i++) {
-		s->s_zmap[i] = bread(dev, block);
-		if (!s->s_zmap[i])
-			break;
-		block++;
-	}
-	if (block != 2 + s->s_imap_blocks + s->s_zmap_blocks)
-		goto out_relse;
-
-	s->s_imap[0]->b_data[0] |= 1;
-	s->s_zmap[0]->b_data[0] |= 1;
-	goto out;
-
-out_relse:
-	for (int i = 0; i < I_MAP_SLOTS; i++)
-		brelse(s->s_imap[i]);
-	for (int i = 0; i < Z_MAP_SLOTS; i++)
-		brelse(s->s_zmap[i]);
-out_free:
-	s->s_dev = 0;
+	s->s_imap_blocks = s->s_ninodes * sizeof(struct d_inode) / BLOCK_SIZE;
+	free_super(s);
+	return s;
 out:
+	s->s_dev = 0;
 	free_super(s);
 	return NULL;
+}
+
+void super_test(void)
+{
+	struct super_block *s = read_super(ROOT_DEV);
+	if (!s) fail("bad read_super");
+	printf("ext2 rev %d.%d\n", s->s_major, s->s_minor);
+	printf("%d/%d inodes\n", s->s_ninodes - s->s_ninodes_free, s->s_ninodes);
+	printf("%d/%d blocks\n", s->s_nblocks - s->s_nblocks_free, s->s_nblocks);
+	fail("");
 }
