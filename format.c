@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <linux/console.h>
 
 int sprintf(char *buf, const char *fmt, ...)
 {

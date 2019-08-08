@@ -8,7 +8,24 @@
 #include <linux/mman.h>
 #include <linux/sched.h>
 #include <linux/cmos.h>
+#include <linux/fs.h>
 #include <stdio.h>
+
+void buffer_test(void)
+{
+	struct buf *b = bread(1, 0);
+	puts(b->b_data);
+}
+
+void cmos_test(void)
+{
+	struct tm t;
+	cmos_gettime(&t);
+	printf("\r%02d/%02d/%02d %02d:%02d:%02d",
+			t.tm_year, t.tm_mon, t.tm_mday,
+			t.tm_hour, t.tm_min, t.tm_sec);
+
+}
 
 void main(void)
 {
@@ -21,18 +38,14 @@ void main(void)
 	set_timer_freq(10);
 	init_mman();
 	init_sched();
+	init_buffer(0x400000);
 
 	irq_setenable(0, 1);
 	irq_setenable(1, 1);
 
 	asm volatile ("sti");
 	for (;;) {
-		struct tm t;
-		cmos_gettime(&t);
-		printf("\r%02d/%02d/%02d %02d:%02d:%02d",
-				t.tm_year, t.tm_mon, t.tm_mday,
-				t.tm_hour, t.tm_min, t.tm_sec);
-
+		buffer_test();
 		asm volatile ("hlt");
 	}
 }
