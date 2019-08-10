@@ -28,7 +28,7 @@ repeat:
 		if (!task[i])
 			return i;
 	}
-	fail("failed to find_empty_task");
+	panic("failed to find_empty_task");
 }
 
 struct task *new_task(struct task *parent)
@@ -47,7 +47,7 @@ void __attribute__((noreturn)) sys_exit(int status)
 	free(current);
 	current = NULL;
 	schedule();
-	fail("sys_exit() schedule returned");
+	panic("sys_exit() schedule returned");
 }
 
 static void __attribute__((noreturn)) __sys_exit(void)

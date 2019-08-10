@@ -1,4 +1,4 @@
-#include <linux/console.h>
+#include <linux/conio.h>
 #include <linux/kernel.h>
 #include <linux/gdt.h>
 #include <linux/idt.h>

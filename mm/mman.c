@@ -1,5 +1,4 @@
 #include <linux/mman.h>
-#include <linux/console.h>
 
 static void *mptr = (void *)0x200000;
 

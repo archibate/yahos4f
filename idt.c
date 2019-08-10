@@ -1,6 +1,5 @@
 #include <linux/kernel.h>
 #include <linux/idt.h>
-#include <linux/console.h>
 #include <linux/keybd.h>
 #include <linux/sched.h>
 #include <linux/pic.h>
@@ -9,20 +8,12 @@ struct gatedesc idt[IDT_NR];
 
 void on_divide_by_zero_error(void)
 {
-	printk("Int#0x00: Divide-By-Zero Error Occurred!");
-	asm volatile ("cli\nhlt");
-}
-
-void asm_on_soft_interrupt(void); /* In ientry.asm */
-void on_soft_interrupt(void)
-{
-	printk("Int#0x80: Soft Interrupt Called!");
+	panic("Int#0x00: Divide-By-Zero Error");
 }
 
 void asm_on_keyboard(void); /* In ientry.asm */
 void on_keyboard(void)
 {
-	//printk("Int#0x21: Keyboard Interrupt!");
 	kb_handler();
 	irq_done(1);
 }
@@ -40,7 +31,6 @@ void asm_on_syscall(void); /* In ientry.asm */
 void init_idt(void)
 {
 	SETGATE(idt[0x00], 0, 0x08, on_divide_by_zero_error, 0);
-	SETGATE(idt[0x80], 0, 0x08, asm_on_soft_interrupt, 0);
 	SETGATE(idt[0x21], 0, 0x08, asm_on_keyboard, 0);
 	SETGATE(idt[0x20], 0, 0x08, asm_on_timer, 0);
 	SETGATE(idt[0x80], 0, 0x08, asm_on_syscall, 3);

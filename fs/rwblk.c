@@ -18,7 +18,7 @@ static inline void lock_buffer(struct buf *b)
 static inline void unlock_buffer(struct buf *b)
 {
 	if (!b->b_lock)
-		printk("rwblk.c: buffer not locked");
+		printk("buffer not locked");
 	b->b_lock = 0;
 	wake_up(&b->b_wait);
 }
@@ -33,7 +33,6 @@ void ll_rw_block(int rw, struct buf *b)
 		goto out;
 
 	ide_rw(ide, rw, b->b_blocknr, b->b_data);
-	printk("%d {%d}", b->b_blocknr, b->b_data[0]);
 	if (rw == READ) {
 		b->b_uptodate = 1;
 	} else if (rw == WRITE) {

@@ -83,7 +83,7 @@ static void remove_from_queues(struct buf *b)
 		hash(b) = b->b_next;
 
 	if (!b->b_prev_free || !b->b_next_free)
-		fail("free block list corrupted");
+		panic("free block list corrupted");
 	b->b_next_free->b_prev_free = b->b_prev_free;
 	b->b_prev_free->b_next_free = b->b_next_free;
 	if (free_list == b)
@@ -175,7 +175,7 @@ void brelse(struct buf *b)
 		return;
 	wait_on_buffer(b);
 	if (!(b->b_count--))
-		fail("trying to free free buffer");
+		panic("trying to free free buffer");
 	wake_up(&buffer_wait);
 }
 
@@ -183,7 +183,7 @@ struct buf *bread(int dev, int block)
 {
 	struct buf *b = getblk(dev, block);
 	if (!b)
-		fail("bread: getblk returned NULL");
+		panic("bread: getblk returned NULL");
 	if (b->b_uptodate)
 		return b;
 	ll_rw_block(READ, b);

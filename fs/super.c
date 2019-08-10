@@ -3,8 +3,7 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/cli.h>
-#include <stddef.h>
-#include <stdio.h>
+#include <string.h>
 
 struct super_block super_block[NR_SUPER];
 
@@ -35,8 +34,6 @@ void wait_on_super(struct super_block *sb)
 
 struct super_block *get_super(int dev)
 {
-	if (!dev)
-		return NULL;
 again:
 	for (int i = 0; i < NR_SUPER; i++) {
 		struct super_block *s = &super_block[i];
@@ -53,12 +50,12 @@ again:
 void unload_super(int dev)
 {
 	if (dev == ROOT_DEV) {
-		printk("root diskette changed: prepare for armageddon");
+		warning("root diskette changed: prepare for armageddon");
 	}
 	struct super_block *s = get_super(dev);
 	if (!s) return;
 	if (s->s_imount) {
-		printk("mounted disk changed - tssk, tssk");
+		warning("cannot unload mounted disk - tssk, tssk");
 		return;
 	}
 	lock_super(s);
@@ -72,35 +69,37 @@ struct super_block *load_super(int dev)
 		return NULL;
 	struct super_block *s = get_super(dev);
 	if (s) return s;
-	for (int i = 0;; i++) {
-		if (i >= NR_SUPER)
-			return NULL;
-		s = &super_block[i];
-		if (!s->s_dev)
-			break;
+
+	s = get_super(0); // get_free_super
+	if (!s) {
+		warning("too much super loaded");
+		return NULL;
 	}
+
 	s->s_dev = dev;
+	lock_super(s);
 	s->s_isup = NULL;
 	s->s_imount = NULL;
 	s->s_time = 0;
 	s->s_rd_only = 0;
 	s->s_dirt = 0;
-	lock_super(s);
+
 	struct buf *b = bread(dev, 1);
-	if (!b)
-		goto out;
-	*(struct d_super_block *)s = *(struct d_super_block *)b->b_data;
+	if (!b) goto bad;
+	memcpy(s, b->b_data, sizeof(struct d_super_block));
 	brelse(b);
 
 	if (s->s_magic != SUPER_MAGIC)
-		goto out;
+		goto bad;
 	if (s->s_log_block_size != BLOCK_SIZE_BITS - 10) {
-		printk("block size other than 1024 unimpelemented");
-		goto out;
+		warning("block size other than 1024 unimpelemented");
+		goto bad;
 	}
+
 	free_super(s);
 	return s;
-out:
+
+bad:
 	s->s_dev = 0;
 	free_super(s);
 	return NULL;

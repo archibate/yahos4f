@@ -1,5 +1,5 @@
 #include <linux/keybd.h>
-#include <linux/console.h>
+#include <linux/conio.h>
 #include <linux/io.h>
 #include <linux/fifo.h>
 #include <linux/sched.h>

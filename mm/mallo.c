@@ -119,7 +119,7 @@ void free(void *p)
 {
 	H *b = get_block(p);
 	if (!(first_block && (H *)p > first_block + 1 && p < sbrk(0) && p == b->ptr))
-		fail("bad free");
+		panic("bad free");
 
 	b->ptr = NULL;
 	if (b->prev && !b->prev->ptr) {
@@ -144,7 +144,7 @@ static void *__realloc(void *p, size_t size)
 		return malloc(size);
 	H *b = get_block(p);
 	if (!(first_block && (H *)p > first_block + 1 && p < sbrk(0) && p == b->ptr))
-		fail("bad realloc");
+		panic("bad realloc");
 
 	size = align(size);
 	if (b->size >= sizeof(H) + 8 + size) {

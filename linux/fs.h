@@ -1,9 +1,11 @@
 #pragma once
 
+#include <linux/atomic.h>
+#include <sys/types.h>
+
 #define READ 0
 #define WRITE 1
 
-#define NAME_LEN 256
 #define ROOT_INO 2
 
 #define ROOT_DEV root_dev
@@ -18,12 +20,13 @@
 #define NR_SUPER 8
 #define NR_HASH 307
 #define NR_BUFFERS nr_buffers
+#define NR_DIRECT 12
 #define BLOCK_SIZE 1024
 #define BLOCK_SIZE_BITS 10
 
 #define INODE_SIZE		sizeof(struct d_inode)
 #define DIR_ENTRY_SIZE		sizeof(struct dir_entry)
-#define GROUP_DESC_SIZE		sizeof(struct dir_entry)
+#define GROUP_DESC_SIZE		sizeof(struct group_desc)
 
 struct buf {
 	char *b_data;			/* pointer to data block (1024 bytes) */
@@ -53,7 +56,7 @@ struct d_inode {
 	unsigned int i_nsectors;
 	unsigned int i_flags;
 	unsigned int i_os_spec1;
-	unsigned int i_zone[12];
+	unsigned int i_zone[NR_DIRECT];
 	unsigned int i_s_zone;
 	unsigned int i_d_zone;
 	unsigned int i_t_zone;
@@ -77,7 +80,7 @@ struct inode {
 	unsigned int i_nsectors;
 	unsigned int i_flags;
 	unsigned int i_os_spec1;
-	unsigned int i_zone[12];
+	unsigned int i_zone[NR_DIRECT];
 	unsigned int i_s_zone;
 	unsigned int i_d_zone;
 	unsigned int i_t_zone;
@@ -88,15 +91,13 @@ struct inode {
 	unsigned char i_os_spec2[12];
 /* these are in memory also */
 	struct task *i_wait;
-	unsigned short i_dev;
-	unsigned short i_num;
-	unsigned short i_count;
+	struct super_block *i_sb;
+	unsigned int i_dev;
+	unsigned int i_ino;
+	atomic_t i_count;
 	unsigned char i_lock;
 	unsigned char i_dirt;
-	unsigned char i_pipe;
-	unsigned char i_mount;
-	unsigned char i_seek;
-	unsigned char i_update;
+	unsigned char i_special;
 };
 
 typedef long off_t;
@@ -135,7 +136,7 @@ struct super_block {
 	unsigned short s_reserved_uid;
 	unsigned short s_reserved_gid;
 /* These are only in memory */
-	unsigned short s_dev;
+	unsigned int s_dev;
 	struct inode *s_isup;
 	struct inode *s_imount;
 	unsigned int s_time;
@@ -188,7 +189,6 @@ struct dir_entry {
 	unsigned short d_entry_size;
 	unsigned char d_name_len;
 	unsigned char d_type;
-	char d_name[NAME_LEN];
 };
 
 extern struct inode inode_table[NR_INODE];
@@ -213,3 +213,11 @@ void wait_on_super(struct super_block *sb);
 struct super_block *get_super(int dev);
 struct super_block *load_super(int dev);
 void unload_super(int dev);
+
+// fs/inode.c
+void ilock(struct inode *ip);
+void iunlock(struct inode *ip);
+void iwait(struct inode *ip);
+struct inode *iget(int dev, int ino);
+struct inode *idup(struct inode *ip);
+void iput(struct inode *ip);

@@ -1,4 +1,4 @@
-#include <linux/console.h>
+#include <linux/conio.h>
 #include <linux/io.h>
 
 static short *const vram = (short *)0xb8000;
@@ -91,4 +91,3 @@ int cputs(const char *s)
 	while (*s)
 		cputc(*s++);
 }
-

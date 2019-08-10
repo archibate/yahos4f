@@ -1,15 +1,6 @@
 ; ientry.asm
 extern __int_leave
 
-global asm_on_soft_interrupt
-extern on_soft_interrupt
-asm_on_soft_interrupt:
-	pushad
-	call on_soft_interrupt
-	call __int_leave
-	popad
-	iretd
-
 global asm_on_keyboard
 extern on_keyboard
 asm_on_keyboard:
