@@ -7,7 +7,7 @@
 static struct fifo kb_fifo;
 static struct task *kb_wait;
 
-int getchar(void)
+int cgetc(void)
 {
 	while (fifo_empty(&kb_fifo)) {
 		intrib_sleep_on(&kb_wait);
@@ -17,11 +17,11 @@ int getchar(void)
 	return fifo_get(&kb_fifo);
 }
 
-static void kb_putchar(int c)
+static void kb_putc(int c)
 {
 	if (fifo_full(&kb_fifo))
 		return;
-	putchar(c);
+	cputc(c);
 	fifo_put(&kb_fifo, c);
 	wake_up(&kb_wait);
 }
@@ -209,5 +209,5 @@ void kb_handler(void)
 		kb_mode &= ~E0ESC;
 
 	else if (ch)
-		kb_putchar(ch);
+		kb_putc(ch);
 }

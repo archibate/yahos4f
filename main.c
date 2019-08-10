@@ -1,4 +1,5 @@
 #include <linux/console.h>
+#include <linux/kernel.h>
 #include <linux/gdt.h>
 #include <linux/idt.h>
 #include <linux/tss.h>
@@ -17,7 +18,7 @@ void cmos_test(void)
 {
 	struct tm t;
 	cmos_gettime(&t);
-	printf("\r%02d/%02d/%02d %02d:%02d:%02d",
+	printk("%02d/%02d/%02d %02d:%02d:%02d",
 			t.tm_year, t.tm_mon, t.tm_mday,
 			t.tm_hour, t.tm_min, t.tm_sec);
 
@@ -26,7 +27,7 @@ void cmos_test(void)
 void main(void)
 {
 	clear();
-	puts("Kernel Started...\n");
+	cputs("Kernel Started...\n");
 	init_gdt();
 	init_idt();
 	init_pic();
@@ -41,7 +42,8 @@ void main(void)
 
 	for (;;) {
 		asm volatile ("sti");
-		super_test();
+		extern void fs_test(void);
+		fs_test();
 		asm volatile ("hlt");
 	}
 }

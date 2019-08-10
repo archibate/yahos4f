@@ -1,5 +1,5 @@
+#include <linux/kernel.h>
 #include <linux/mman.h>
-#include <linux/fail.h>
 
 typedef unsigned long size_t;
 

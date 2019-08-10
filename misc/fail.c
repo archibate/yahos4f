@@ -1,10 +1,8 @@
-#include <linux/fail.h>
-#include <linux/console.h>
+#include <linux/kernel.h>
 
 void __attribute__((noreturn)) fail(const char *msg)
 {
-	puts("FAIL: ");
-	puts(msg);
+	printk("FAIL: %s", msg);
 	for (;;)
 		asm volatile ("cli\nhlt");
 }

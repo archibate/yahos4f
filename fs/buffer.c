@@ -1,6 +1,6 @@
 // https://github.com/archibate/Linux011/blob/master/src/V0.11/fs/buffer.c
 #include <linux/fs.h>
-#include <linux/fail.h>
+#include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/cli.h>
 #include <stddef.h>
@@ -87,7 +87,7 @@ static void remove_from_queues(struct buf *b)
 	b->b_next_free->b_prev_free = b->b_prev_free;
 	b->b_prev_free->b_next_free = b->b_next_free;
 	if (free_list == b)
-		free_list = b->b_next;
+		free_list = b->b_next_free;
 }
 
 static void insert_into_queues(struct buf *b)

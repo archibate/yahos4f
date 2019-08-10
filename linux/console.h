@@ -1,8 +1,8 @@
 #pragma once
 
 void clear(void);
-int putchar(int c);
-int puts(const char *s);
+int cputc(int c);
+int cputs(const char *s);
 void setcolor(int clr);
 int getcolor(void);
 void getcur(int *x, int *y);

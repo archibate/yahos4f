@@ -1,6 +1,6 @@
+#include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/io.h>
-#include <linux/fail.h>
 
 /* Status */
 #define IDE_BSY     0x80    // Busy
@@ -41,8 +41,8 @@ static void ide_wait(void)
 			fail("ide_wait timeout");
 	}
 
-	/*if (r & (IDE_DF|IDE_ERR))
-		fail("ide_wait got error");*/
+	if (r & (IDE_DF|IDE_ERR))
+		fail("ide_wait got error");
 }
 
 static void ide_seek(int dev, int blkno)
@@ -53,6 +53,7 @@ static void ide_seek(int dev, int blkno)
 
 	outb(IDE_SECTNR, PBPB);
 
+	printk("ide_seek: dev=%d, lba=%d", dev, lba);
 	outb(IDE_LBA0, lba         & 0xff);
 	outb(IDE_LBA1, (lba >> 8)  & 0xff);
 	outb(IDE_LBA2, (lba >> 16) & 0xff);
@@ -66,13 +67,16 @@ static void ide_seek(int dev, int blkno)
 void ide_rw(int ide, int rw, int blkno, void *buf)
 {
 	ide_seek(ide, blkno);
-
-	outb(IDE_CMD, IDE_CMD_READ);
-	ide_wait();
-	if (rw == READ) {
-		insl(IDE_DAT, buf, BLOCK_SIZE/4);
-	} else if (rw == WRITE)
-		outsl(IDE_DAT, buf, BLOCK_SIZE/4);
+	if (rw == READ)
+		outb(IDE_CMD, PBPB == 1 ? IDE_CMD_READ : IDE_CMD_RDMUL);
+	else if (rw == WRITE)
+		outb(IDE_CMD, PBPB == 1 ? IDE_CMD_WRITE : IDE_CMD_WRMUL);
 	else
 		fail("ide_rw: bad rw command\n");
+
+	ide_wait();
+	if (rw == READ)
+		insl(IDE_DAT, buf, BLOCK_SIZE/4);
+	else if (rw == WRITE)
+		outsl(IDE_DAT, buf, BLOCK_SIZE/4);
 }

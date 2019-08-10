@@ -1,5 +1,5 @@
+#include <linux/kernel.h>
 #include <linux/sched.h>
-#include <linux/fail.h>
 #include <stddef.h>
 
 struct task *task[NR_TASKS];

@@ -1,5 +1,5 @@
+#include <linux/kernel.h>
 #include <linux/ide.h>
-#include <linux/fail.h>
 #include <linux/io.h>
 
 /* Status */

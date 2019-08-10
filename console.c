@@ -69,7 +69,7 @@ static void scroll_up(int n)
 	cy -= n;
 }
 
-int putchar(int c)
+int cputc(int c)
 {
 	if (c == '\n' || cx > nx) {
 		cx = 0;
@@ -86,9 +86,9 @@ int putchar(int c)
 	update_iocur();
 }
 
-int puts(const char *s)
+int cputs(const char *s)
 {
 	while (*s)
-		putchar(*s++);
+		cputc(*s++);
 }
 

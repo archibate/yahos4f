@@ -3,7 +3,7 @@
 #define READ 0
 #define WRITE 1
 
-#define NAME_LEN 14
+#define NAME_LEN 256
 #define ROOT_INO 2
 
 #define ROOT_DEV root_dev
@@ -21,8 +21,9 @@
 #define BLOCK_SIZE 1024
 #define BLOCK_SIZE_BITS 10
 
-#define INODES_PER_BLOCK ((BLOCK_SIZE)/(sizeof (struct d_inode)))
-#define DIR_ENTRIES_PER_BLOCK ((BLOCK_SIZE)/(sizeof (struct dir_entry)))
+#define INODE_SIZE		sizeof(struct d_inode)
+#define DIR_ENTRY_SIZE		sizeof(struct dir_entry)
+#define GROUP_DESC_SIZE		sizeof(struct dir_entry)
 
 struct buf {
 	char *b_data;			/* pointer to data block (1024 bytes) */
@@ -52,7 +53,7 @@ struct d_inode {
 	unsigned int i_nsectors;
 	unsigned int i_flags;
 	unsigned int i_os_spec1;
-	unsigned int i_zone[11];
+	unsigned int i_zone[12];
 	unsigned int i_s_zone;
 	unsigned int i_d_zone;
 	unsigned int i_t_zone;
@@ -76,7 +77,7 @@ struct inode {
 	unsigned int i_nsectors;
 	unsigned int i_flags;
 	unsigned int i_os_spec1;
-	unsigned int i_zone[11];
+	unsigned int i_zone[12];
 	unsigned int i_s_zone;
 	unsigned int i_d_zone;
 	unsigned int i_t_zone;
@@ -142,7 +143,6 @@ struct super_block {
 	unsigned char s_lock;
 	unsigned char s_rd_only;
 	unsigned char s_dirt;
-	unsigned int s_imap_blocks;
 };
 
 struct d_super_block {
@@ -173,9 +173,22 @@ struct d_super_block {
 	unsigned short s_reserved_gid;
 };
 
+struct group_desc {
+	unsigned int bmap_block;
+	unsigned int imap_block;
+	unsigned int itab_block;
+	unsigned short nblocks_free;
+	unsigned short ninodes_free;
+	unsigned short ndirectories;
+	unsigned char unused[14];
+};
+
 struct dir_entry {
-	unsigned short inode;
-	char name[NAME_LEN];
+	unsigned int d_ino;
+	unsigned short d_entry_size;
+	unsigned char d_name_len;
+	unsigned char d_type;
+	char d_name[NAME_LEN];
 };
 
 extern struct inode inode_table[NR_INODE];
@@ -185,7 +198,18 @@ extern struct buf *start_buffer;
 extern int nr_buffers;
 extern int root_dev;
 
-void init_buffer(unsigned long buffer_end);
+// fs/rwblk.c
 void ll_rw_block(int rw, struct buf *b);
+
+// fs/buffer.c
+void init_buffer(unsigned long buffer_end);
 struct buf *bread(int dev, int block);
 void brelse(struct buf *b);
+
+// fs/super.c
+void lock_super(struct super_block *sb);
+void free_super(struct super_block *sb);
+void wait_on_super(struct super_block *sb);
+struct super_block *get_super(int dev);
+struct super_block *load_super(int dev);
+void unload_super(int dev);
