@@ -97,7 +97,9 @@ struct inode {
 	atomic_t i_count;
 	unsigned char i_lock;
 	unsigned char i_dirt;
-	unsigned char i_special;
+	unsigned short i_on_offset;
+	unsigned int i_on_block;
+	unsigned int i_special_type;
 };
 
 typedef long off_t;
@@ -221,3 +223,17 @@ void iwait(struct inode *ip);
 struct inode *iget(int dev, int ino);
 struct inode *idup(struct inode *ip);
 void iput(struct inode *ip);
+size_t iread(struct inode *ip, off_t pos, void *buf, size_t size);
+size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size);
+
+// fs/dir.c
+int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos);
+
+// fs/path.c
+struct inode *dir_geti(struct inode *dip, const char *path);
+int dir_getp(struct inode *dip, struct dir_entry *de, const char *path,
+		struct inode **ppip);
+
+// fs/namei.c
+struct inode *namei(const char *path);
+int namep(struct dir_entry *de, const char *path, struct inode **ppip);

@@ -16,6 +16,8 @@ struct task {
 	struct cont ctx;
 #define STACK_SIZE	8192
 	void *stack;
+// user attributes:
+	struct inode *cwd;
 };
 
 #define INITIAL_TASK	{ \

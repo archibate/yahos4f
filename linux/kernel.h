@@ -23,6 +23,7 @@ void __attribute__((noreturn)) __vpanic(_ARG_SINFO, const char *fmt, va_list ap)
 #define inform(...)	__printk(KL_INFO  _SPEC_SINFO, __VA_ARGS__)
 #define debug(...)	__printk(KL_DEBUG _SPEC_SINFO, __VA_ARGS__)
 #define panic(...)	__panic( KL_PANIC _SPEC_SINFO, __VA_ARGS__)
+#define show(fmt, var)	debug(#var "=" fmt, var)
 
 #define static_assert(x) switch (0) { case (x): case 0: break; }
 
