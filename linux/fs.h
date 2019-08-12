@@ -100,6 +100,7 @@ struct inode {
 	unsigned short i_on_offset;
 	unsigned int i_on_block;
 	unsigned int i_special_type;
+	unsigned int i_bmap_block;
 };
 
 typedef long off_t;
