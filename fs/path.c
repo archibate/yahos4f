@@ -3,16 +3,19 @@
 #include <string.h>
 #include <alloca.h>
 
-int dir_getp(struct inode *dip, struct dir_entry *de, const char *path,
-		struct inode **ppip)
+struct inode *dir_getp(struct inode *dip, const char **ppath)
 {
+	static struct dir_entry de;
 	char *name;
-	const char *p;
+	const char *p, *path = *ppath;
 	int pos;
 
 	dip = idup(dip);
 
 	while ((p = strchr(path, '/'))) {
+		if (!S_ISDIR(dip->i_mode))
+			goto not_found;
+
 		name = alloca(p - path + 1);
 		memcpy(name, path, p - path);
 		name[p - path] = 0;
@@ -20,29 +23,30 @@ int dir_getp(struct inode *dip, struct dir_entry *de, const char *path,
 		for (; *p == '/'; p++);
 		path = p;
 
-		if (-1 == dir_find(dip, de, name, 0))
+		if (0 > dir_find(dip, &de, name, 0))
 			goto not_found;
-		dip = iget(dip->i_dev, de->d_ino);
+		dip = iget(dip->i_dev, de.d_ino);
 	}
 
-	if (-1 == (pos = dir_find(dip, de, path, 0)))
+	if (!S_ISDIR(dip->i_mode))
 		goto not_found;
 
-	*ppip = dip;
-	return pos;
+	*ppath = path;
+	return dip;
 
 not_found:
 	iput(dip);
-	return -1;
+	return NULL;
 }
 
 struct inode *dir_geti(struct inode *dip, const char *path)
 {
 	static struct dir_entry de;
-	struct inode *pip, *ip;
-	int pos = dir_getp(dip, &de, path, &pip);
-	if (pos == -1)
-		return NULL;
+	struct inode *ip, *pip = dir_getp(dip, &path);
+	if (!pip) return NULL;
+
+	if (0 > dir_find(pip, &de, path, 0))
+		goto not_found;
 
 	int dev = pip->i_dev;
 	iput(pip);
@@ -50,4 +54,22 @@ struct inode *dir_geti(struct inode *dip, const char *path)
 	if (!ip)
 		warning("iget(pip->i_dev, de.d_ino) returned NULL");
 	return ip;
+not_found:
+	iput(pip);
+	return NULL;
+}
+
+int dir_linki(struct inode *dip, const char *path, struct inode *ip)
+{
+	static struct dir_entry de;
+	struct inode *pip = dir_getp(dip, &path);
+	if (!pip) return 0;
+
+	if (0 > dir_link(pip, path, ip))
+		goto already_exist;
+	iput(pip);
+	return 1;
+already_exist:
+	iput(pip);
+	return 0;
 }

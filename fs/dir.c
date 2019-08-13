@@ -21,5 +21,32 @@ int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos)
 		if (!strcmp(na, name))
 			return pos;
 	}
-	return -1;
+	return -pos;
+}
+
+int dir_link(struct inode *dip, const char *name, struct inode *ip)
+{
+	static struct dir_entry de;
+	int pos = dir_find(dip, &de, name, 0);
+	if (pos >= 0)
+		return -pos;
+	pos = -pos;
+
+	size_t len = strlen(name);
+	de.d_ino = ip->i_ino;
+	de.d_name_len = len;
+	de.d_entry_size = sizeof(de) + len;
+	de.d_type = 0;
+
+	if (iwrite(dip, pos, &de, DIR_ENTRY_SIZE) != DIR_ENTRY_SIZE) {
+		warning("cannot iwrite dir new entry");
+		return -1;
+	}
+	if (iwrite(dip, pos + DIR_ENTRY_SIZE, name, len) != len) {
+		warning("cannot iwrite entry name string");
+		return -1;
+	}
+	ip->i_nlinks++;
+	iupdate(ip);
+	return pos;
 }

@@ -105,7 +105,7 @@ struct inode *iget(int dev, int ino)
 	ip->i_dev = dev;
 	ip->i_ino = ino;
 	ip->i_dirt = 0;
-	ip->i_special_type = 0;
+	ip->i_reserved = 0;
 
 	struct super_block *s = get_super(dev);
 	if (!s) {
@@ -361,21 +361,18 @@ void fs_test(void)
 	printk("%d/%d blocks", s->s_nblocks - s->s_nblocks_free, s->s_nblocks);
 	printk("");
 
-	struct inode *ip = namei("/etc/issue");
-	if (!ip)
-		panic("bad namei(/etc/issue)");
-
-	extern char _start[20000];
-#define str _start
-	if (iwrite(ip, 0, str, sizeof(str) - 1) != sizeof(str) - 1)
-		panic("bad iwrite(/etc/issue)");
-
-	static char buf[sizeof(str)];
-	buf[iread(ip, 0, buf, sizeof(buf) - 1)] = 0;
-	if (strcmp(str, buf))
-		panic("bad diff");
+	struct inode *ip;
+	ip = namei("/etc/issue");
+	if (!linki("/etc/simp", ip))
+		panic("failed to link /etc/simp from /etc/issue");
 	iput(ip);
 
-	printk("");
+	printk("!");
+	static char buf[233];
+	ip = namei("/etc/simp");
+	buf[iread(ip, 0, buf, sizeof(buf) - 1)] = 0;
+	iput(ip);
+	printk("%s", buf);
+
 	asm volatile ("cli;hlt");
 }
