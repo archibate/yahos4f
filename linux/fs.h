@@ -97,10 +97,9 @@ struct inode {
 	atomic_t i_count;
 	unsigned char i_lock;
 	unsigned char i_dirt;
-	unsigned short i_on_offset;
+	unsigned short i_special_type;
 	unsigned int i_on_block;
-	unsigned int i_special_type;
-	unsigned int i_bmap_block;
+	unsigned int i_on_addr;
 };
 
 typedef long off_t;
@@ -238,3 +237,7 @@ int dir_getp(struct inode *dip, struct dir_entry *de, const char *path,
 // fs/namei.c
 struct inode *namei(const char *path);
 int namep(struct dir_entry *de, const char *path, struct inode **ppip);
+
+// fs/blkrw.c
+int blk_read(int dev, int blk, int addr, void *buf, size_t size);
+int blk_write(int dev, int blk, int addr, const void *buf, size_t size);
