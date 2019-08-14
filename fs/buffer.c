@@ -12,22 +12,11 @@ static struct buf *free_list;
 static struct task *buffer_wait;
 int nr_buffers = 0;
 
-static inline void wait_on_buffer(struct buf *b)
-{
-	cli();
-	while (b->b_lock)
-		sleep_on(&b->b_wait);
-	sti();
-}
-
-#define sync_inodes() nr_buffers
-
 int sys_sync(void)
 {
 	sync_inodes();
 	for (int i = 0; i < NR_BUFFERS; i++) {
 		struct buf *b = &start_buffer[i];
-		wait_on_buffer(b);
 		if (b->b_dirt)
 			ll_rw_block(WRITE, b);
 	}
@@ -40,7 +29,6 @@ int sync_dev(int dev)
 		struct buf *b = &start_buffer[i];
 		if (b->b_dev != dev)
 			continue;
-		wait_on_buffer(b);
 		if (b->b_dev == dev && b->b_dirt)
 			ll_rw_block(WRITE, b);
 	}
@@ -49,7 +37,6 @@ int sync_dev(int dev)
 		struct buf *b = &start_buffer[i];
 		if (b->b_dev != dev)
 			continue;
-		wait_on_buffer(b);
 		if (b->b_dev == dev && b->b_dirt)
 			ll_rw_block(WRITE, b);
 	}
@@ -62,7 +49,6 @@ static void invalidate_buffers(int dev)
 		struct buf *b = &start_buffer[i];
 		if (b->b_dev != dev)
 			continue;
-		wait_on_buffer(b);
 		if (b->b_dev == dev)
 			b->b_uptodate = b->b_dirt = 0;
 	}
@@ -119,14 +105,14 @@ struct buf *get_hash_table(int dev, int block)
 		struct buf *b = find_buffer(dev, block);
 		if(!b) return NULL;
 		b->b_count++;
-		wait_on_buffer(b);
 		if (match(b, dev, block))
 			return b;
 		b->b_count--;
 	}
 }
 
-#define BADNESS(b) (((b)->b_dirt << 1) + (b)->b_lock)
+//#define BADNESS(b) (((b)->b_dirt << 1) + (b)->b_lock)
+#define BADNESS(b) ((b)->b_dirt << 1)
 struct buf *getblk(int dev, int block)
 {
 	struct buf *b;
@@ -147,12 +133,10 @@ repeat:
 		sleep_on(&buffer_wait);
 		goto repeat;
 	}
-	wait_on_buffer(b);
 	if (b->b_count)
 		goto repeat;
 	while (b->b_dirt) {
 		sync_dev(b->b_dev);
-		wait_on_buffer(b);
 		if (b->b_count)
 			goto repeat;
 	}
@@ -168,12 +152,13 @@ repeat:
 	return b;
 }
 
+void bwrite(struct buf *b)
+{
+	b->b_dirt = 1;
+}
 
 void brelse(struct buf *b)
 {
-	if (!b)
-		return;
-	wait_on_buffer(b);
 	if (!(b->b_count--))
 		panic("trying to free free buffer");
 	wake_up(&buffer_wait);
@@ -187,7 +172,6 @@ struct buf *bread(int dev, int block)
 	if (b->b_uptodate)
 		return b;
 	ll_rw_block(READ, b);
-	wait_on_buffer(b);
 	if (b->b_uptodate)
 		return b;
 	brelse(b);
@@ -208,9 +192,7 @@ void init_buffer(unsigned long buffer_end)
 		h->b_dev = 0;
 		h->b_dirt = 0;
 		h->b_count = 0;
-		h->b_lock = 0;
 		h->b_uptodate = 0;
-		h->b_wait = NULL;
 		h->b_next = NULL;
 		h->b_prev = NULL;
 		h->b_data = b;

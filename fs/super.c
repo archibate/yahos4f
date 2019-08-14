@@ -7,77 +7,43 @@
 
 struct super_block super_block[NR_SUPER];
 
-void lock_super(struct super_block *sb)
-{
-	cli();
-	while (sb->s_lock)
-		sleep_on(&sb->s_wait);
-	sb->s_lock = 1;
-	sti();
-}
-
-void free_super(struct super_block *sb)
-{
-	cli();
-	sb->s_lock = 0;
-	wake_up(&sb->s_wait);
-	sti();
-}
-
-void wait_on_super(struct super_block *sb)
-{
-	cli();
-	while (sb->s_lock)
-		sleep_on(&sb->s_wait);
-	sti();
-}
-
 struct super_block *get_super(int dev)
 {
-again:
 	for (int i = 0; i < NR_SUPER; i++) {
 		struct super_block *s = &super_block[i];
-		if (s->s_dev == dev) {
-			wait_on_super(s);
-			if (s->s_dev == dev)
-				return s;
-			goto again;
-		}
+		if (s->s_dev == dev)
+			return s;
 	}
 	return NULL;
 }
 
-void unload_super(int dev)
+void put_super(int dev)
 {
-	if (dev == ROOT_DEV) {
+	if (dev == ROOT_DEV)
 		warning("root diskette changed: prepare for armageddon");
-	}
 	struct super_block *s = get_super(dev);
 	if (!s) return;
 	if (s->s_imount) {
 		warning("cannot unload mounted disk - tssk, tssk");
 		return;
 	}
-	lock_super(s);
 	s->s_dev = 0;
-	free_super(s);
 }
 
-struct super_block *load_super(int dev)
+struct super_block *read_super(int dev)
 {
 	if (!dev)
 		return NULL;
 	struct super_block *s = get_super(dev);
 	if (s) return s;
 
-	s = get_super(0); // get_free_super
+	s = get_super(0); // get_free_super()
 	if (!s) {
 		warning("too much super loaded");
 		return NULL;
 	}
 
 	s->s_dev = dev;
-	lock_super(s);
 	s->s_isup = NULL;
 	s->s_imount = NULL;
 	s->s_time = 0;
@@ -96,11 +62,9 @@ struct super_block *load_super(int dev)
 		goto bad;
 	}
 
-	free_super(s);
 	return s;
 
 bad:
 	s->s_dev = 0;
-	free_super(s);
 	return NULL;
 }

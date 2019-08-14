@@ -15,7 +15,7 @@ int blk_write(int dev, int blk, int addr, const void *buf, size_t size)
 	struct buf *b = bread(dev, blk + addr / BLOCK_SIZE);
 	if (!b) return 0;
 	memcpy(b->b_data + addr % BLOCK_SIZE, buf, size);
-	b->b_dirt = 1;
+	bwrite(b);
 	brelse(b);
 	return 1;
 }

@@ -69,7 +69,7 @@ static void scroll_up(int n)
 	cy -= n;
 }
 
-int cputc(int c)
+static int __cputc(int c)
 {
 	if (c == '\n' || cx > nx) {
 		cx = 0;
@@ -83,11 +83,19 @@ int cputc(int c)
 		vram[cy * nx + cx] = color | c;
 		cx++;
 	}
+}
+
+int cputc(int c)
+{
+	download_iocur();
+	__cputc(c);
 	update_iocur();
 }
 
 int cputs(const char *s)
 {
+	download_iocur();
 	while (*s)
-		cputc(*s++);
+		__cputc(*s++);
+	update_iocur();
 }

@@ -123,13 +123,11 @@ struct inode {
 	unsigned int i_frag_block;
 	unsigned char i_os_spec2[12];
 /* these are in memory also */
-	struct task *i_wait;
 	struct super_block *i_sb;
 	struct super_block *i_mount;
 	unsigned int i_dev;
 	unsigned int i_ino;
 	atomic_t i_count;
-	unsigned char i_lock;
 	unsigned char i_dirt;
 	unsigned short i_reserved;
 	unsigned int i_on_block;
@@ -176,8 +174,6 @@ struct super_block {
 	struct inode *s_isup;
 	struct inode *s_imount;
 	unsigned int s_time;
-	struct task *s_wait;
-	unsigned char s_lock;
 	unsigned char s_rd_only;
 	unsigned char s_dirt;
 };
@@ -240,26 +236,23 @@ void ll_rw_block(int rw, struct buf *b);
 // fs/buffer.c
 void init_buffer(unsigned long buffer_end);
 struct buf *bread(int dev, int block);
+void bwrite(struct buf *b);
 void brelse(struct buf *b);
+int sys_sync(void);
 
 // fs/super.c
-void lock_super(struct super_block *sb);
-void free_super(struct super_block *sb);
-void wait_on_super(struct super_block *sb);
 struct super_block *get_super(int dev);
-struct super_block *load_super(int dev);
-void unload_super(int dev);
+struct super_block *read_super(int dev);
+void put_super(int dev);
 
 // fs/inode.c
-void ilock(struct inode *ip);
-void iunlock(struct inode *ip);
-void iwait(struct inode *ip);
 struct inode *iget(int dev, int ino);
 struct inode *idup(struct inode *ip);
 size_t iread(struct inode *ip, off_t pos, void *buf, size_t size);
 size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size);
 void iupdate(struct inode *ip);
 void iput(struct inode *ip);
+void sync_inodes(void);
 
 // fs/dir.c
 int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos);

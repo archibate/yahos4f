@@ -8,42 +8,12 @@
 
 static struct inode inode[NR_INODE];
 
-void ilock(struct inode *ip)
-{
-	cli();
-	while (ip->i_lock)
-		sleep_on(&ip->i_wait);
-	ip->i_lock = 1;
-	sti();
-}
-
-void iunlock(struct inode *ip)
-{
-	cli();
-	ip->i_lock = 0;
-	wake_up(&ip->i_wait);
-	sti();
-}
-
-void iwait(struct inode *ip)
-{
-	cli();
-	while (ip->i_lock)
-		sleep_on(&ip->i_wait);
-	sti();
-}
-
 static struct inode *find_inode(int dev, int ino)
 {
-again:
 	for (int i = 0; i < NR_INODE; i++) {
 		struct inode *ip = &inode[i];
-		if (ip->i_dev == dev && ip->i_ino == ino) {
-			iwait(ip);
-			if (ip->i_dev == dev && ip->i_ino == ino)
-				return ip;
-			goto again;
-		}
+		if (ip->i_dev == dev && ip->i_ino == ino)
+			return ip;
 	}
 	return NULL;
 }
@@ -101,7 +71,6 @@ struct inode *iget(int dev, int ino)
 	if (ip) return idup(ip);
 
 	ip = alloc_inode();
-	ilock(ip);
 	ip->i_dev = dev;
 	ip->i_ino = ino;
 	ip->i_dirt = 0;
@@ -127,10 +96,8 @@ struct inode *iget(int dev, int ino)
 		goto bad;
 	}
 
-	iunlock(ip);
 	return ip;
 bad:
-	iunlock(ip);
 	atomic_set(&ip->i_count, 0);
 	return NULL;
 }
@@ -186,8 +153,13 @@ again:
 		char sel = 1 << (goal % 8), *p = &b->b_data[goal / 8];
 		if (*p & sel)
 			continue;
+		gd.nblocks_free--;
+		if (!update_group_desc(ip, &gd)) {
+			warning("failed to update_group_desc");
+			return 0;
+		}
 		*p |= sel;
-		b->b_dirt = 1;
+		bwrite(b);
 		brelse(b);
 		return goal;
 	}
@@ -230,7 +202,7 @@ static int ext2_get_singly_block(struct inode *ip, int zone)
 			return 0;
 		}
 		zone[(int *)b->b_data] = block;
-		b->b_dirt = 1;
+		bwrite(b);
 	}
 	brelse(b);
 	return block;
@@ -295,7 +267,7 @@ static size_t do_irw(struct inode *ip, int rw, off_t pos, void *buf, size_t size
 				break;
 			}
 			p[zone] = zb[zone] = block;
-			b->b_dirt = 1;
+			bwrite(b);
 			brelse(b);
 		}
 #endif // }}}
@@ -313,7 +285,7 @@ static size_t do_irw(struct inode *ip, int rw, off_t pos, void *buf, size_t size
 			memcpy(buf, b->b_data + off, n);
 		} else {
 			memcpy(b->b_data + off, buf, n);
-			b->b_dirt = 1;
+			bwrite(b);
 		}
 		brelse(b);
 		buf += n;
@@ -322,6 +294,7 @@ static size_t do_irw(struct inode *ip, int rw, off_t pos, void *buf, size_t size
 		off = 0;
 		zone++;
 	}
+
 	return size;
 }
 
@@ -351,10 +324,15 @@ size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size)
 	return size - rest;
 }
 
+void sync_inodes(void)
+{
+	panic("sync_inodes() uni");
+}
+
 void fs_test(void)
 {
-	struct super_block *s = load_super(ROOT_DEV);
-	if (!s) panic("bad load_super");
+	struct super_block *s = read_super(ROOT_DEV);
+	if (!s) panic("bad read_super");
 
 	printk("ext2 rev %d.%d", s->s_major, s->s_minor);
 	printk("%d/%d inodes", s->s_ninodes - s->s_ninodes_free, s->s_ninodes);
@@ -367,7 +345,6 @@ void fs_test(void)
 		panic("failed to link /etc/simp from /etc/issue");
 	iput(ip);
 
-	printk("!");
 	static char buf[233];
 	ip = namei("/etc/simp");
 	buf[iread(ip, 0, buf, sizeof(buf) - 1)] = 0;

@@ -13,9 +13,6 @@ struct inode *dir_getp(struct inode *dip, const char **ppath)
 	dip = idup(dip);
 
 	while ((p = strchr(path, '/'))) {
-		if (!S_ISDIR(dip->i_mode))
-			goto not_found;
-
 		name = alloca(p - path + 1);
 		memcpy(name, path, p - path);
 		name[p - path] = 0;
@@ -25,7 +22,13 @@ struct inode *dir_getp(struct inode *dip, const char **ppath)
 
 		if (0 > dir_find(dip, &de, name, 0))
 			goto not_found;
-		dip = iget(dip->i_dev, de.d_ino);
+		int dev = dip->i_dev;
+		iput(dip);
+		dip = iget(dev, de.d_ino);
+		if (!dip) {
+			warning("iget returned NULL");
+			goto not_found;
+		}
 	}
 
 	if (!S_ISDIR(dip->i_mode))
