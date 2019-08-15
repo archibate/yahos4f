@@ -180,9 +180,12 @@ int dir_init(struct inode *dip, struct inode *pip)
 
 struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode)
 {
+<<<<<<< HEAD
 	if (!S_ISDIR(dip->i_mode))
 		return NULL; /* ENOTDIR */
 
+=======
+>>>>>>> 9ece444c0c26779e89ded70225ba21578dd28eda
 	struct inode *ip = ext2_alloc_inode(dip);
 	if (!ip) {
 		warning("cannot ext2_alloc_inode");
