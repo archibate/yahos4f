@@ -1,7 +1,6 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
-#include <linux/cli.h>
 #include <string.h>
 #include <malloc.h>
 #include <stddef.h>
@@ -22,8 +21,10 @@ static struct inode *alloc_inode(void)
 {
 	for (int i = 0; i < NR_SUPER; i++) {
 		struct inode *ip = &inode[i];
-		if (!atomic_setifz(&ip->i_count, 1))
+		if (!ip->i_count) {
+			ip->i_count = 1;
 			return ip;
+		}
 	}
 	warning("too much super loaded");
 	return NULL;
@@ -31,7 +32,7 @@ static struct inode *alloc_inode(void)
 
 struct inode *idup(struct inode *ip)
 {
-	atomic_add(&ip->i_count, 1);
+	ip->i_count++;
 	return ip;
 }
 
@@ -73,8 +74,6 @@ struct inode *iget(int dev, int ino)
 	ip = alloc_inode();
 	ip->i_dev = dev;
 	ip->i_ino = ino;
-	ip->i_dirt = 0;
-	ip->i_reserved = 0;
 
 	struct super_block *s = get_super(dev);
 	if (!s) {
@@ -98,44 +97,68 @@ struct inode *iget(int dev, int ino)
 
 	return ip;
 bad:
-	atomic_set(&ip->i_count, 0);
+	ip->i_count = 0;
 	return NULL;
 }
 
 void iput(struct inode *ip)
 {
-	if (atomic_subu(&ip->i_count, 1) < 0)
+	if (ip->i_count <= 0) {
 		warning("iput with i_count <= 0");
-}
-
-#if 0 // {{{
-static void alloc_block(struct group_desc *gd)
-{
-	unsigned int addr = gd->bmap_block;
-}
-
-static void do_extension(struct inode *ip, size_t size)
-{
-	int m = (ip->i_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
-	int n = (      size + BLOCK_SIZE - 1) / BLOCK_SIZE;
-	if (m <= n)
 		return;
-
-	if (n >= NR_DIRECT)
-		panic("non-direct zone map unimpelemented");
-
-	static struct group_desc gd0;
-	struct group_desc *gd = &gd0;
-
-	get_inode_group_desc(gd);
-	for (int i = m; i < n; i++) {
-		if (!ip->i_zone[i]) {
-			ip->i_zone[i] = alloc_block(gd);
-		}
 	}
-	ip->i_size = size;
+	ip->i_count--;
 }
-#endif // }}}
+
+void ext2_free_inode(struct inode *ip)
+{
+}
+
+struct inode *ext2_alloc_inode(struct inode *ip)
+{
+	int once = 0;
+	static struct group_desc gd;
+	unsigned int addr;
+	if (!get_group_desc(ip, &gd)) {
+		warning("failed to get inode group-desc");
+		return NULL;
+	}
+	struct buf *b = bread(ip->i_dev, gd.imap_block);
+	int ino = ip->i_ino;
+again:
+	for (; ino <= 8 * BLOCK_SIZE; ino++) {
+		char sel = 1 << (ino % 8), *p = &b->b_data[ino / 8];
+		if (*p & sel)
+			continue;
+		gd.ninodes_free--;
+		if (!update_group_desc(ip, &gd)) {
+			warning("failed to update_group_desc");
+			return NULL;
+		}
+		*p |= sel;
+		bwrite(b);
+		brelse(b);
+		struct inode *rip = alloc_inode();
+		rip->i_dev = ip->i_dev;
+		rip->i_ino = ino;
+		rip->i_sb = ip->i_sb;
+		rip->i_on_addr =
+			((ino - 1) % ip->i_sb->s_inodes_per_group) * INODE_SIZE;
+		rip->i_on_block = gd.itab_block;
+		return rip;
+	}
+	if (once) {
+		brelse(b);
+		return NULL;
+	}
+	ino = 1;
+	once = 1;
+	goto again;
+}
+
+static void ext2_free_block(int block)
+{
+}
 
 static int ext2_alloc_block(struct inode *ip, int goal)
 {
@@ -146,7 +169,7 @@ static int ext2_alloc_block(struct inode *ip, int goal)
 		return 0;
 	}
 	struct buf *b = bread(ip->i_dev, gd.bmap_block);
-	if (goal)
+	if (!goal)
 		goto oncer;
 again:
 	for (; goal <= 8 * BLOCK_SIZE; goal++) {
@@ -324,9 +347,17 @@ size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size)
 	return size - rest;
 }
 
+void init_inode(struct inode *ip, unsigned int mode)
+{
+	memset(ip, 0, INODE_SIZE);
+	//ip->i_ctime = curr_time;
+	//ip->i_atime = curr_time;
+	//ip->i_mtime = curr_time;
+	ip->i_mode = mode;
+}
+
 void sync_inodes(void)
 {
-	panic("sync_inodes() uni");
 }
 
 void fs_test(void)
@@ -340,16 +371,25 @@ void fs_test(void)
 	printk("");
 
 	struct inode *ip;
-	ip = namei("/etc/issue");
-	if (!linki("/etc/simp", ip))
-		panic("failed to link /etc/simp from /etc/issue");
+#if 1
+	if (sys_mkdir("/dev", S_DFDIR) == -1)
+		panic("failed to mkdir for /dev");
+	ip = creati("/dev/simp", S_DFREG);
+	if (!ip)
+		panic("failed to creati for /dev/simp");
+
+	static char str[] = "Hello, S_IFREG!";
+	if (iwrite(ip, 0, str, sizeof(str) - 1) != sizeof(str) - 1)
+		panic("failed to write for /dev/simp");
+
 	iput(ip);
+#endif
 
 	static char buf[233];
-	ip = namei("/etc/simp");
+	ip = namei("/dev/simp");
+	if (!ip)
+		panic("failed to namei for /dev/simp");
 	buf[iread(ip, 0, buf, sizeof(buf) - 1)] = 0;
 	iput(ip);
 	printk("%s", buf);
-
-	asm volatile ("cli;hlt");
 }

@@ -1,4 +1,4 @@
-; kernel.asm
+; kernel
 
 MB_MAGIC	equ	0x1BADB002
 MB_FLAGS	equ	0

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <linux/atomic.h>
 #include <sys/types.h>
 
 #define READ 0
@@ -18,7 +17,6 @@
 #define NR_INODE 32
 #define NR_FILE 64
 #define NR_SUPER 8
-#define NR_HASH 307
 #define NR_BUFFERS nr_buffers
 #define NR_DIRECT 12
 #define BLOCK_SIZE 1024
@@ -92,6 +90,10 @@ struct d_inode {
 #define S_IFLNK		0xa000
 #define S_IFSOCK	0xc000
 
+#define S_DFLNK	(S_IFLNK | 0777)
+#define S_DFREG	(S_IFREG | 0644)
+#define S_DFDIR	(S_IFDIR | 0755)
+
 #define S_ISFIFO(m)	((m & S_IFMT) == S_IFIFO)
 #define S_ISDIR(m)	((m & S_IFMT) == S_IFDIR)
 #define S_ISCHR(m)	((m & S_IFMT) == S_IFCHR)
@@ -124,12 +126,9 @@ struct inode {
 	unsigned char i_os_spec2[12];
 /* these are in memory also */
 	struct super_block *i_sb;
-	struct super_block *i_mount;
 	unsigned int i_dev;
 	unsigned int i_ino;
-	atomic_t i_count;
-	unsigned char i_dirt;
-	unsigned short i_reserved;
+	unsigned int i_count;
 	unsigned int i_on_block;
 	unsigned int i_on_addr;
 };
@@ -253,26 +252,33 @@ size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size);
 void iupdate(struct inode *ip);
 void iput(struct inode *ip);
 void sync_inodes(void);
+void ext2_free_inode(struct inode *ip);
+struct inode *ext2_alloc_inode(struct inode *ip);
+void init_inode(struct inode *ip, unsigned int mode);
 
 // fs/dir.c
+int dir_init(struct inode *dip, struct inode *pip);
+struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode);
 int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos);
 int dir_link(struct inode *dip, const char *name, struct inode *ip);
+int dir_unlink(struct inode *dip, const char *name);
 
 // fs/path.c
 struct inode *dir_geti(struct inode *dip, const char *path);
 struct inode *dir_getp(struct inode *dip, const char **ppath);
+struct inode *dir_creati(struct inode *dip, const char *path, unsigned int mode);
+int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode);
 int dir_linki(struct inode *dip, const char *path, struct inode *ip);
+int dir_unlinki(struct inode *dip, const char *path);
 
 // fs/namei.c
 struct inode *namei(const char *path);
 struct inode *namep(const char **path);
 int linki(const char *path, struct inode *ip);
+struct inode *creati(const char *path, unsigned int mode);
+int sys_mkdir(const char *path, unsigned int mode);
+int sys_unlink(const char *path);
 
 // fs/blkrw.c
 int blk_read(int dev, int blk, int addr, void *buf, size_t size);
 int blk_write(int dev, int blk, int addr, const void *buf, size_t size);
-
-// fs/mount.c
-int mount_super(struct super_block *s, struct inode *ip);
-int umount_super(struct super_block *s);
-int umount_inode(struct super_block *ip);

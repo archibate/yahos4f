@@ -2,7 +2,6 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
-#include <linux/cli.h>
 #include <string.h>
 
 struct super_block super_block[NR_SUPER];
