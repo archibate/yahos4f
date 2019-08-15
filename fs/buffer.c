@@ -2,12 +2,13 @@
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
-#include <linux/cli.h>
 #include <stddef.h>
+
+#define NR_BUF_HASH 307
 
 extern char end[0];
 struct buf *start_buffer = (struct buf *) &end;
-struct buf *hash_table[NR_HASH];
+struct buf *hash_table[NR_BUF_HASH];
 static struct buf *free_list;
 static struct task *buffer_wait;
 int nr_buffers = 0;
@@ -54,7 +55,7 @@ static void invalidate_buffers(int dev)
 	}
 }
 
-#define hashfn(dev, block)   (((dev) ^ (block)) % NR_HASH)
+#define hashfn(dev, block)   (((dev) ^ (block)) % NR_BUF_HASH)
 #define hashed(dev, block)   (hash_table[hashfn(dev, block)])
 #define hash(b)              hashed((b)->b_dev, (b)->b_blocknr)
 #define match(b, dev, block) ((b)->b_dev == (dev) && (b)->b_blocknr == (block))

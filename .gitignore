@@ -1,6 +1,7 @@
 kernel
-fsctl
+Image
 *.o
+*.a
 .*.sw*
 .*.un*
 *~
