@@ -95,10 +95,7 @@ int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode)
 		return -1;
 	if (dir_init(ip, pip) == -1) {
 		warning("failed to dir_init");
-<<<<<<< HEAD
 		dir_unlink(pip, path);
-=======
->>>>>>> 9ece444c0c26779e89ded70225ba21578dd28eda
 		return -1;
 	}
 	return 0;
