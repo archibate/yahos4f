@@ -79,10 +79,12 @@ bad:
 
 struct inode *dir_creati(struct inode *dip, const char *path, unsigned int mode)
 {
-	struct inode *pip = dir_getp(dip, &path);
+	struct inode *pip = dir_getp(dip, &path), *ip;
 	if (!pip)
 		return NULL;
-	return dir_creat(pip, path, mode);
+	ip = dir_creat(pip, path, mode);
+	iput(pip);
+	return ip;
 }
 
 int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode)
@@ -92,13 +94,19 @@ int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode)
 		return -1;
 	ip = dir_creat(pip, path, (mode & ~S_IFMT) | S_IFDIR);
 	if (!ip)
-		return -1;
+		goto bad;
 	if (dir_init(ip, pip) == -1) {
 		warning("failed to dir_init");
-		dir_unlink(pip, path);
-		return -1;
+		dir_unlink(pip, path, 2);
+		goto bad;
 	}
+	iput(pip);
+	iput(ip);
 	return 0;
+bad:
+	iput(pip);
+	iput(ip);
+	return -1;
 }
 
 int dir_unlinki(struct inode *dip, const char *path)
@@ -106,5 +114,17 @@ int dir_unlinki(struct inode *dip, const char *path)
 	struct inode *pip = dir_getp(dip, &path);
 	if (!pip)
 		return -1;
-	return dir_unlink(pip, path);
+	int ret = dir_unlink(pip, path, 0);
+	iput(pip);
+	return ret;
+}
+
+int dir_rmdiri(struct inode *dip, const char *path)
+{
+	struct inode *pip = dir_getp(dip, &path);
+	if (!pip)
+		return -1;
+	int ret = dir_unlink(pip, path, 1);
+	iput(pip);
+	return ret;
 }

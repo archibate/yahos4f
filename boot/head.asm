@@ -9,7 +9,7 @@ _start:
 	mov sp, 0x7c00
 
 	push word 0
-	call pc_thunk
+	call pc_thunk_bp
 	add bp, kernel - $
 	lea sp, [bp - 2]
 	cmp [bp], dword 0x464c457f
@@ -34,11 +34,22 @@ _start:
 	
 	jmp dword 0x8 : prot_start
 
-pc_thunk:
+pc_thunk_bp:
 	pop bp
 	push bp
 	retf
 
+poweroff:
+	mov ax, 0x5301
+	xor bx, bx
+	int 0x15
+	mov ax, 0x530e
+	mov cx, 0x0102
+	int 0x15
+	mov ax, 0x5307
+	mov bl, 0x01
+	mov cx, 0x0003
+	int 0x15
 error:
 	int 0x19
 	cli

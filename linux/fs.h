@@ -242,6 +242,7 @@ int sys_sync(void);
 // fs/super.c
 struct super_block *get_super(int dev);
 struct super_block *read_super(int dev);
+void update_super(struct super_block *sb);
 void put_super(int dev);
 
 // fs/inode.c
@@ -257,11 +258,12 @@ struct inode *ext2_alloc_inode(struct inode *ip);
 void init_inode(struct inode *ip, unsigned int mode);
 
 // fs/dir.c
-int dir_init(struct inode *dip, struct inode *pip);
 struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode);
 int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos);
 int dir_link(struct inode *dip, const char *name, struct inode *ip);
-int dir_unlink(struct inode *dip, const char *name);
+int dir_unlink(struct inode *dip, const char *name, int rd);
+int dir_init(struct inode *dip, struct inode *pip);
+int dir_destroy(struct inode *dip);
 
 // fs/path.c
 struct inode *dir_geti(struct inode *dip, const char *path);
@@ -270,6 +272,7 @@ struct inode *dir_creati(struct inode *dip, const char *path, unsigned int mode)
 int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode);
 int dir_linki(struct inode *dip, const char *path, struct inode *ip);
 int dir_unlinki(struct inode *dip, const char *path);
+int dir_rmdiri(struct inode *dip, const char *path);
 
 // fs/namei.c
 struct inode *namei(const char *path);
@@ -278,6 +281,7 @@ int linki(const char *path, struct inode *ip);
 struct inode *creati(const char *path, unsigned int mode);
 int sys_mkdir(const char *path, unsigned int mode);
 int sys_unlink(const char *path);
+int sys_rmdir(const char *path);
 
 // fs/blkrw.c
 int blk_read(int dev, int blk, int addr, void *buf, size_t size);

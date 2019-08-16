@@ -67,3 +67,16 @@ bad:
 	s->s_dev = 0;
 	return NULL;
 }
+
+void update_super(struct super_block *sb)
+{
+	int dev = sb->s_dev;
+	struct buf *b = bread(dev, 1);
+	if (!b) {
+		warning("failed to bread super");
+		return;
+	}
+	memcpy(b->b_data, sb, sizeof(struct d_super_block));
+	bwrite(b);
+	brelse(b);
+}

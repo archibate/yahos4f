@@ -26,7 +26,7 @@ static struct inode *alloc_inode(void)
 			return ip;
 		}
 	}
-	warning("too much super loaded");
+	panic("too much inode loaded, synfree uni");
 	return NULL;
 }
 
@@ -110,54 +110,29 @@ void iput(struct inode *ip)
 	ip->i_count--;
 }
 
-void ext2_free_inode(struct inode *ip)
+static void ext2_free_block(struct inode *ip, int block)
 {
-}
-
-struct inode *ext2_alloc_inode(struct inode *ip)
-{
-	int once = 0;
 	static struct group_desc gd;
-	unsigned int addr;
 	if (!get_group_desc(ip, &gd)) {
 		warning("failed to get inode group-desc");
-		return NULL;
+		return;
 	}
-	struct buf *b = bread(ip->i_dev, gd.imap_block);
-	int ino = ip->i_ino;
-again:
-	for (; ino <= 8 * BLOCK_SIZE; ino++) {
-		char sel = 1 << (ino % 8), *p = &b->b_data[ino / 8];
-		if (*p & sel)
-			continue;
-		gd.ninodes_free--;
-		if (!update_group_desc(ip, &gd)) {
-			warning("failed to update_group_desc");
-			return NULL;
-		}
-		*p |= sel;
-		bwrite(b);
-		brelse(b);
-		struct inode *rip = alloc_inode();
-		rip->i_dev = ip->i_dev;
-		rip->i_ino = ino;
-		rip->i_sb = ip->i_sb;
-		rip->i_on_addr =
-			((ino - 1) % ip->i_sb->s_inodes_per_group) * INODE_SIZE;
-		rip->i_on_block = gd.itab_block;
-		return rip;
+	struct buf *b = bread(ip->i_dev, gd.bmap_block);
+	char sel = 1 << (block % 8), *p = &b->b_data[block / 8];
+	if (!(*p & sel)) {
+		warning("bad free: block %d not allocated", block);
+		return;
 	}
-	if (once) {
-		brelse(b);
-		return NULL;
+	gd.nblocks_free++;
+	if (!update_group_desc(ip, &gd)) {
+		warning("failed to update_group_desc");
+		return;
 	}
-	ino = 1;
-	once = 1;
-	goto again;
-}
-
-static void ext2_free_block(int block)
-{
+	*p &= ~sel;
+	bwrite(b);
+	brelse(b);
+	ip->i_sb->s_nblocks_free++;
+	update_super(ip->i_sb);
 }
 
 static int ext2_alloc_block(struct inode *ip, int goal)
@@ -184,14 +159,115 @@ again:
 		*p |= sel;
 		bwrite(b);
 		brelse(b);
+		ip->i_sb->s_ninodes_free--;
+		update_super(ip->i_sb);
 		return goal;
 	}
 	if (once) {
+		warning("out of block");
 		brelse(b);
 		return 0;
 	}
 oncer:
 	goal = 1;
+	once = 1;
+	goto again;
+}
+
+static void ext2_free_inode_blocks(struct inode *ip)
+{
+	for (int i = 0; i < NR_DIRECT; i++) {
+		unsigned int *p = &ip->i_zone[i];
+		if (!*p) continue;
+		ext2_free_block(ip, *p);
+		*p = 0;
+	}
+	if (ip->i_s_zone) {
+		struct buf *b = bread(ip->i_dev, ip->i_s_zone);
+		for (int i = 0; i < BLOCK_SIZE / sizeof(int); i++) {
+			unsigned int *p = &i[(unsigned int*)b->b_data];
+			if (!*p) continue;
+			ext2_free_block(ip, *p);
+			*p = 0;
+		}
+		bwrite(b);
+		brelse(b);
+		ext2_free_block(ip, ip->i_s_zone);
+		ip->i_s_zone = 0;
+	}
+	iupdate(ip);
+	if (ip->i_d_zone || ip->i_t_zone)
+		panic("doubly/triply indirect block unimpelemented");
+}
+
+void ext2_free_inode(struct inode *ip)
+{
+	ext2_free_inode_blocks(ip);
+	static struct group_desc gd;
+	if (!get_group_desc(ip, &gd)) {
+		warning("failed to get inode group-desc");
+		return;
+	}
+	struct buf *b = bread(ip->i_dev, gd.imap_block);
+	int ino = ip->i_ino;
+	char sel = 1 << ((ino - 1) % 8), *p = &b->b_data[(ino - 1) / 8];
+	if (!(*p & sel)) {
+		warning("bad free: inode %d not allocated", ino);
+		return;
+	}
+	gd.ninodes_free++;
+	if (!update_group_desc(ip, &gd)) {
+		warning("failed to update_group_desc");
+		return;
+	}
+	*p &= ~sel;
+	bwrite(b);
+	brelse(b);
+	ip->i_sb->s_ninodes_free++;
+	update_super(ip->i_sb);
+}
+
+struct inode *ext2_alloc_inode(struct inode *ip)
+{
+	int once = 0;
+	static struct group_desc gd;
+	if (!get_group_desc(ip, &gd)) {
+		warning("failed to get inode group-desc");
+		return NULL;
+	}
+	struct buf *b = bread(ip->i_dev, gd.imap_block);
+	int ino = ip->i_ino;
+again:
+	for (; ino <= 8 * BLOCK_SIZE; ino++) {
+		char sel = 1 << ((ino - 1) % 8), *p = &b->b_data[(ino - 1) / 8];
+		if (*p & sel)
+			continue;
+		gd.ninodes_free--;
+		if (!update_group_desc(ip, &gd)) {
+			warning("failed to update_group_desc");
+			brelse(b);
+			return NULL;
+		}
+		*p |= sel;
+		bwrite(b);
+		brelse(b);
+		ip->i_sb->s_nblocks_free--;
+		update_super(ip->i_sb);
+		struct inode *rip = alloc_inode();
+		rip->i_dev = ip->i_dev;
+		rip->i_ino = ino;
+		rip->i_sb = ip->i_sb;
+		rip->i_on_addr =
+			((ino - 1) % ip->i_sb->s_inodes_per_group) * INODE_SIZE;
+		rip->i_on_block = gd.itab_block;
+		return rip;
+	}
+	if (once) {
+		warning("out of inode");
+		brelse(b);
+		return NULL;
+	}
+	ino = 10;
 	once = 1;
 	goto again;
 }
@@ -372,6 +448,8 @@ void fs_test(void)
 
 	struct inode *ip;
 #if 1
+	sys_unlink("/dev/simp");
+	sys_rmdir("/dev");
 	if (sys_mkdir("/dev", S_DFDIR) == -1)
 		panic("failed to mkdir for /dev");
 	ip = creati("/dev/simp", S_DFREG);

@@ -55,7 +55,6 @@ int sys_unlink(const char *path)
 	return ret;
 }
 
-
 int linki(const char *path, struct inode *ip)
 {
 	int ret;
@@ -84,6 +83,17 @@ int sys_mkdir(const char *path, unsigned int mode)
 	if (!(dip = path_name(&path)))
 		return -1;
 	ret = dir_mkdiri(dip, path, mode);
+	iput(dip);
+	return ret;
+}
+
+int sys_rmdir(const char *path)
+{
+	int ret;
+	struct inode *dip;
+	if (!(dip = path_name(&path)))
+		return -1;
+	ret = dir_rmdiri(dip, path);
 	iput(dip);
 	return ret;
 }
