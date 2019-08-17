@@ -279,10 +279,14 @@ struct inode *namei(const char *path);
 struct inode *namep(const char **path);
 int linki(const char *path, struct inode *ip);
 struct inode *creati(const char *path, unsigned int mode);
-int sys_mkdir(const char *path, unsigned int mode);
-int sys_unlink(const char *path);
-int sys_rmdir(const char *path);
+int fs_link(const char *oldpath, const char *newpath);
+int fs_mkdir(const char *path, unsigned int mode);
+int fs_unlink(const char *path);
+int fs_rmdir(const char *path);
 
 // fs/blkrw.c
 int blk_read(int dev, int blk, int addr, void *buf, size_t size);
 int blk_write(int dev, int blk, int addr, const void *buf, size_t size);
+
+// fs/exec.c
+int do_execve(const char *path);

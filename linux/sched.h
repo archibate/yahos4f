@@ -1,6 +1,6 @@
 #pragma once
 
-#include "context.h"
+#include <linux/context.h>
 
 #define TASK_RUNNING	0
 #define TASK_INTRIB	1
@@ -18,6 +18,12 @@ struct task {
 	void *stack;
 // user attributes:
 	struct inode *cwd;
+	struct inode *executable;
+	unsigned int euid, egid;
+	unsigned long user_entry;
+	unsigned long ebss;
+	unsigned long brk;
+	unsigned long stop;
 };
 
 #define INITIAL_TASK	{ \

@@ -1,22 +1,39 @@
+#include <linux/kernel.h>
+#include <linux/segment.h>
 #include <linux/pushad.h>
 #include <linux/sched.h>
+#include <linux/fs.h>
 
-/* keep sync with usr/api.h */
+static int sys_debug(const char __user *msg)
+{
+	debug(msg);
+	return 0;
+}
+
+static int sys_mkdir(const char __user *path, unsigned int mode)
+{
+	return fs_mkdir(path, mode);
+}
+
+static int sys_rmdir(const char __user *path)
+{
+	return fs_rmdir(path);
+}
+
+static int sys_link(const char __user *oldpath, const char __user *newpath)
+{
+	return fs_link(oldpath, newpath);
+}
+
+static int sys_unlink(const char __user *path)
+{
+	return fs_unlink(path);
+}
 
 void on_syscall(PUSHAD_ARGS)
 {
 	switch (eax) {
-	case 1:
-		sys_exit(eax);
-		break;
-	case 2:
-		*&eax = sys_pause();
-		break;
-	case 3:
-		*&eax = sys_getpid();
-		break;
-	case 4:
-		*&eax = sys_getppid();
-		break;
+#define _SYSCALL_KERNEL_DEFINATION
+#include <linux/syscall.h>
 	}
 }

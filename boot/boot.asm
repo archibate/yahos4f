@@ -3,6 +3,10 @@
 bits 16
 global _start
 _start:
+	jmp entry
+	times 3-($-$$) nop
+
+entry:
 	xor ax, ax
 	mov ds, ax
 	mov es, ax

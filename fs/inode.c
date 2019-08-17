@@ -436,21 +436,34 @@ void sync_inodes(void)
 {
 }
 
+static const char *stros(int id)
+{
+	switch (id) {
+	case 0: return "Linux";
+	case 1: return "GNU/Hurd";
+	case 2: return "MASIX";
+	case 3: return "FreeBSD";
+	case 4: return "BSD4.4-Lite";
+	case 233: return "YahOS";
+	default: return "Other";
+	}
+}
+
 void fs_test(void)
 {
 	struct super_block *s = read_super(ROOT_DEV);
 	if (!s) panic("bad read_super");
 
-	printk("ext2 rev %d.%d", s->s_major, s->s_minor);
+	printk("%s ext2 rev %d.%d", stros(s->s_os_id), s->s_major, s->s_minor);
 	printk("%d/%d inodes", s->s_ninodes - s->s_ninodes_free, s->s_ninodes);
 	printk("%d/%d blocks", s->s_nblocks - s->s_nblocks_free, s->s_nblocks);
 	printk("");
 
 	struct inode *ip;
 #if 1
-	sys_unlink("/dev/simp");
-	sys_rmdir("/dev");
-	if (sys_mkdir("/dev", S_DFDIR) == -1)
+	fs_unlink("/dev/simp");
+	fs_rmdir("/dev");
+	if (fs_mkdir("/dev", S_DFDIR) == -1)
 		panic("failed to mkdir for /dev");
 	ip = creati("/dev/simp", S_DFREG);
 	if (!ip)

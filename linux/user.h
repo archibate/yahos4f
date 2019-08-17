@@ -1,3 +1,4 @@
 #pragma once
 
-void __attribute__((noreturn, fastcall)) move_to_user(void *sp, unsigned int eflags);
+void __attribute__((noreturn)) move_to_user(
+		unsigned long pc, unsigned long sp, unsigned int eflags);

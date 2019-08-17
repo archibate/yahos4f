@@ -1,9 +1,10 @@
 #include <linux/fs.h>
 #include <linux/sched.h>
+#include <linux/kernel.h>
 #include <linux/segment.h>
 #include <elf.h>
 
-static int is_vaild_elf_header(struct Elf32_Ehdr *e)
+static int is_vaild_elf_header(Elf32_Ehdr *e)
 {
 	return	1
 		&& e->e_ident[EI_MAG0] == ELFMAG0
@@ -20,15 +21,15 @@ static int proc_close_current(void)
 	// ...
 }
 
-static size_t iread_fs(struct inode *ip, off_t pos, void *p, size_t size)
+static size_t iread_user(struct inode *ip, off_t pos, void *p, size_t size)
 {
 	size_t n = size;
-	static char buf[PAGE_SIZE];
+	static char buf[4096];
 	while (size > 0) {
-		if (n > PAGE_SIZE)
-			n = PAGE_SIZE;
+		if (n > 4096)
+			n = 4096;
 		iread(ip, pos, buf, n);
-		write_fs_memory(p, buf, n);
+		copy_to_user(p, buf, n);
 		size -= n;
 		pos += n;
 		p += n;
@@ -52,10 +53,10 @@ static int execve_inode(struct inode *ip)
 	if (!(i & S_XOTH))
 		return -1; /* EACCES */
 
-	static struct Elf32_Ehdr e;
+	static Elf32_Ehdr e;
 	if (iread(ip, 0, &e, sizeof(e)) != sizeof(e))
 		return -1; /* ENOEXEC */
-	if (!is_vaild_elf_header(e))
+	if (!is_vaild_elf_header(&e))
 		return -1; /* ENOEXEC */
 
 	if (current->executable)
@@ -63,15 +64,21 @@ static int execve_inode(struct inode *ip)
 	current->executable = ip;
 	proc_close_current();
 
-	static struct Elf32_Phdr ph;
-	for (int i = 0; i < e->e_phnum; i++) {
-		iread(ip, e->e_phoff + i * sizeof(ph), &ph, sizeof(ph));
-		iread_fs(ip, ph->p_offset, (void *)ph->p_paddr, ph->p_filesz);
-		zero_fs_memory((void *)ph->p_paddr + ph->p_filesz,
-				ph->p_memsz - ph->p_filesz);
+	unsigned long ebss = 0;
+	static Elf32_Phdr ph;
+	for (int i = 0; i < e.e_phnum; i++) {
+		iread(ip, e.e_phoff + i * sizeof(ph), &ph, sizeof(ph));
+		iread_user(ip, ph.p_offset, (void *)ph.p_paddr, ph.p_filesz);
+		clear_user((void *)ph.p_paddr + ph.p_filesz,
+				ph.p_memsz - ph.p_filesz);
+		if (ebss < ph.p_paddr + ph.p_memsz)
+			ebss = ph.p_paddr + ph.p_memsz;
 	}
 
-	current->ctx.pc = e->e_entry;
+	current->user_entry = e.e_entry;
+	current->ebss = ebss;
+	current->brk = ebss;
+	current->stop = ebss + 4096;
 
 	current->euid = euid;
 	current->egid = egid;

@@ -44,7 +44,7 @@ struct inode *namei(const char *path)
 	return ip;
 }
 
-int sys_unlink(const char *path)
+int fs_unlink(const char *path)
 {
 	int ret;
 	struct inode *dip;
@@ -76,7 +76,7 @@ struct inode *creati(const char *path, unsigned int mode)
 	return ip;
 }
 
-int sys_mkdir(const char *path, unsigned int mode)
+int fs_mkdir(const char *path, unsigned int mode)
 {
 	int ret;
 	struct inode *dip;
@@ -87,7 +87,7 @@ int sys_mkdir(const char *path, unsigned int mode)
 	return ret;
 }
 
-int sys_rmdir(const char *path)
+int fs_rmdir(const char *path)
 {
 	int ret;
 	struct inode *dip;
@@ -95,5 +95,13 @@ int sys_rmdir(const char *path)
 		return -1;
 	ret = dir_rmdiri(dip, path);
 	iput(dip);
+	return ret;
+}
+
+int fs_link(const char *oldpath, const char *newpath)
+{
+	struct inode *ip = namei(newpath);
+	int ret = linki(newpath, ip);
+	iput(ip);
 	return ret;
 }

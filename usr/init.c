@@ -1,6 +1,6 @@
-#include <linux/system.h>
+#include <linux/syscall.h>
 
 int main(void)
 {
-	sys_puts("!");
+	_debug("!");
 }

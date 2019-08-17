@@ -63,6 +63,6 @@ struct task *setup_task(struct task *p, void *start, void *arg)
 	*--sp = __sys_exit;
 	*--sp = start;
 	p->ctx.sp = (long)sp;
-	p->ctx.eflags = FL_1F | FL_IF;
+	p->ctx.eflags = FL_1F;
 	return p;
 }
