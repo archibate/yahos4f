@@ -118,8 +118,9 @@ void merge_block(H *b)
 void free(void *p)
 {
 	H *b = get_block(p);
-	if (!(first_block && (H *)p > first_block + 1 && p < sbrk(0) && p == b->ptr))
-		panic("bad free");
+	if (!(first_block && (H *)p >= first_block + 1
+				&& p < sbrk(0) && p == b->ptr))
+		panic("bad free %p", p);
 
 	b->ptr = NULL;
 	if (b->prev && !b->prev->ptr) {

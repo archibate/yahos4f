@@ -2,6 +2,7 @@
 #include <linux/sched.h>
 #include <linux/mman.h>
 #include <linux/eflags.h>
+#include <linux/vmm.h>
 #include <stddef.h>
 
 static int last_pid = 0;
@@ -37,6 +38,8 @@ struct task *new_task(struct task *parent)
 	struct task *p = calloc(1, sizeof(struct task));
 	task[i] = p;
 	p->stack = malloc(STACK_SIZE);
+	p->mm = calloc(1, sizeof(struct mm));
+	asm volatile ("mov %%cr3, %0" : "=r" (p->mm->pgd)); // todo: new_mm(p->mm)
 	p->ppid = parent->pid;
 	p->pid = last_pid;
 	return p;
@@ -44,8 +47,11 @@ struct task *new_task(struct task *parent)
 
 void __attribute__((noreturn)) sys_exit(int status)
 {
+	int i = get_pid_index(current->pid);
+	if (i == -1)
+		panic("cannot get current pid index");
 	free(current);
-	current = NULL;
+	task[i] = current = NULL;
 	schedule();
 	panic("sys_exit() schedule returned");
 }

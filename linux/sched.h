@@ -16,7 +16,8 @@ struct task {
 	struct cont ctx;
 #define STACK_SIZE	8192
 	void *stack;
-// user attributes:
+// user process attributes:
+	struct mm *mm;
 	struct inode *cwd;
 	struct inode *executable;
 	unsigned int euid, egid;
@@ -42,8 +43,10 @@ int sys_pause(void);
 void sleep_on(struct task **p);
 void intrib_sleep_on(struct task **p);
 void wake_up(struct task **p);
+struct task *get_proc(int pid);
 int sys_getpid(void);
 int sys_getppid(void);
 struct task *new_task(struct task *parent);
 struct task *setup_task(struct task *p, void *start, void *arg);
 void __attribute__((noreturn)) sys_exit(int status);
+int get_pid_index(int pid);

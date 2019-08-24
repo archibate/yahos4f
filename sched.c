@@ -72,6 +72,14 @@ void wake_up(struct task **p)
 	*p = NULL;
 }
 
+int get_pid_index(int pid)
+{
+	for (int i = 0; i < NR_TASKS; i++)
+		if (task[i]->pid == pid)
+			return i;
+	return -1;
+}
+
 void init_sched(void)
 {
 	static struct task initial_task = INITIAL_TASK;

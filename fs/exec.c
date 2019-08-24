@@ -1,8 +1,12 @@
 #include <linux/fs.h>
 #include <linux/sched.h>
 #include <linux/kernel.h>
-#include <linux/segment.h>
+#include <linux/vmm.h>
+#include <linux/user.h>
+#include <linux/eflags.h>
 #include <elf.h>
+
+#define USER_STACK_SIZE 8192
 
 static int is_vaild_elf_header(Elf32_Ehdr *e)
 {
@@ -19,21 +23,6 @@ static int is_vaild_elf_header(Elf32_Ehdr *e)
 static int proc_close_current(void)
 {
 	// ...
-}
-
-static size_t iread_user(struct inode *ip, off_t pos, void *p, size_t size)
-{
-	size_t n = size;
-	static char buf[4096];
-	while (size > 0) {
-		if (n > 4096)
-			n = 4096;
-		iread(ip, pos, buf, n);
-		copy_to_user(p, buf, n);
-		size -= n;
-		pos += n;
-		p += n;
-	}
 }
 
 static int execve_inode(struct inode *ip)
@@ -68,21 +57,24 @@ static int execve_inode(struct inode *ip)
 	static Elf32_Phdr ph;
 	for (int i = 0; i < e.e_phnum; i++) {
 		iread(ip, e.e_phoff + i * sizeof(ph), &ph, sizeof(ph));
-		iread_user(ip, ph.p_offset, (void *)ph.p_paddr, ph.p_filesz);
-		clear_user((void *)ph.p_paddr + ph.p_filesz,
+		mmapi(current->mm, ip, ph.p_offset,
+				(void __user *)ph.p_paddr, ph.p_filesz);
+		mmapz(current->mm, (void __user *)ph.p_paddr + ph.p_filesz,
 				ph.p_memsz - ph.p_filesz);
 		if (ebss < ph.p_paddr + ph.p_memsz)
 			ebss = ph.p_paddr + ph.p_memsz;
 	}
 
-	current->user_entry = e.e_entry;
+	ebss = (ebss + PGSIZE - 1) & PGMASK;
 	current->ebss = ebss;
 	current->brk = ebss;
-	current->stop = ebss + 4096;
+	current->stop = ebss + USER_STACK_SIZE;
+	mmapz(current->mm, (void __user *)ebss, USER_STACK_SIZE);
 
 	current->euid = euid;
 	current->egid = egid;
-	return 0;
+
+	move_to_user(e.e_entry, current->stop - 8, FL_1F | FL_IF);
 }
 
 int do_execve(const char *path)

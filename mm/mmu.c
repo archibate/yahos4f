@@ -1,3 +1,4 @@
+#include <linux/kernel.h>
 #include <linux/mmu.h>
 
 #define BOOT_PTS_NR (0x400000 / (4096*1024))
@@ -14,7 +15,9 @@ void init_mmu(void)
 		}
 		boot_pd[i] = (unsigned long)boot_pts[i] | PG_W | PG_P;
 	}
-#if 0
+	for (int i = BOOT_PTS_NR; i < 1024; i++)
+		boot_pd[i] = 0;
+#if 1
 	static char __attribute__((aligned(4096))) zero_page[4096];
 	boot_pts[0][0] = (unsigned long)zero_page | PG_P;
 #else

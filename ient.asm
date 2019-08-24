@@ -19,6 +19,16 @@ asm_on_timer:
 	popad
 	iretd
 
+global asm_on_page_fault
+extern on_page_fault
+asm_on_page_fault:
+	pushad
+	call on_page_fault
+	call __int_leave
+	popad
+	add esp, 4
+	iretd
+
 global asm_on_syscall
 extern on_syscall
 asm_on_syscall:

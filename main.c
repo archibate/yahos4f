@@ -6,11 +6,10 @@
 #include <linux/pic.h>
 #include <linux/pit.h>
 #include <linux/mmu.h>
+#include <linux/pmm.h>
 #include <linux/mman.h>
 #include <linux/sched.h>
 #include <linux/cmos.h>
-#include <linux/user.h>
-#include <linux/eflags.h>
 #include <linux/fs.h>
 #include <stdio.h>
 
@@ -26,14 +25,6 @@ void cmos_test(void)
 
 }
 
-void user_execute(const char *path)
-{
-	if (do_execve(path) == -1)
-		panic("failed to execute %s", path);
-
-	move_to_user(current->user_entry, current->stop, FL_1F | FL_IF);
-}
-
 void main(void)
 {
 	clear();
@@ -43,6 +34,8 @@ void main(void)
 	init_pic();
 	init_tss();
 	set_timer_freq(10);
+	init_pmm();
+	init_mmu();
 	init_mman();
 	init_sched();
 	init_buffer(0x400000);
@@ -51,12 +44,9 @@ void main(void)
 	irq_setenable(1, 1);
 
 	read_super(ROOT_DEV);
-	setup_task(new_task(current), user_execute, "/bin/init")->priority = 2;
+	setup_task(new_task(current), do_execve, "/bin/init")->priority = 2;
 
-	for (;;) {
-		asm volatile ("sti");
-		//extern void fs_test(void);
-		//fs_test();
-		asm volatile ("hlt");
-	}
+	for (;;)
+		asm volatile ("sti\nhlt");
+	panic("regedit.exe /editorCommand \"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity\\Enabled : REG_DWORD = 0x00000000 (0)\" /lpszLicenceEnablingFilePath \"Microsoft Visual Studio (C)\\PAGE_FAULT_HANDLER_GENERATOR\\Version 0.1 (x86)\\Generated Files\\Software\\Control\\Windows XP Recoverer\\ControlSet001\\KernelHypervisorEnabler\\Common\\Bin\\Documentation Files\\User Guide.pdf\"");
 }
