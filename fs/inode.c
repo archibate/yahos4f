@@ -400,7 +400,7 @@ static size_t do_irw(struct inode *ip, int rw, off_t pos, void *buf, size_t size
 size_t iread(struct inode *ip, off_t pos, void *buf, size_t size)
 {
 	if (pos > ip->i_size) {
-		warning("offset out of range");
+		warning("offset out of range (%d > %d)", pos, ip->i_size);
 		return 0;
 	}
 	if (pos + size > ip->i_size)
@@ -412,7 +412,7 @@ size_t iread(struct inode *ip, off_t pos, void *buf, size_t size)
 size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size)
 {
 	if (pos > ip->i_size) {
-		warning("offset out of range");
+		warning("offset out of range (%d > %d)", pos, ip->i_size);
 		return 0;
 	}
 	if (pos + size > ip->i_size) {

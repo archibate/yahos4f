@@ -38,7 +38,7 @@ void main(void)
 	init_mmu();
 	init_mman();
 	init_sched();
-	init_buffer(0x400000);
+	init_buffer();
 
 	irq_setenable(0, 1);
 	irq_setenable(1, 1);

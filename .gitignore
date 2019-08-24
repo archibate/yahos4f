@@ -1,4 +1,6 @@
 kernel
+boot/boot
+boot/head
 Image
 bin/
 hda.img

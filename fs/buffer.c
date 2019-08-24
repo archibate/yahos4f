@@ -1,5 +1,6 @@
 // https://github.com/archibate/Linux011/blob/master/src/V0.11/fs/buffer.c
 #include <linux/fs.h>
+#include <linux/mman.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <stddef.h>
@@ -180,16 +181,13 @@ struct buf *bread(int dev, int block)
 }
 
 
-void init_buffer(unsigned long buffer_end)
+void init_buffer(void)
 {
+	static struct buf start_buffer[NR_BUFFERS];
 	struct buf *h = start_buffer;
-	void *b;
 
-	if (buffer_end == (1<<20))
-		b = (void *)(640*1024);
-	else
-		b = (void *)buffer_end;
-	while ((b -= BLOCK_SIZE) >= (void *)(h + 1)) {
+	for (int i = 0; i < NR_BUFFERS; i++) {
+		void *b = sbrk(BLOCK_SIZE) + BLOCK_SIZE;
 		h->b_dev = 0;
 		h->b_dirt = 0;
 		h->b_count = 0;
@@ -197,15 +195,12 @@ void init_buffer(unsigned long buffer_end)
 		h->b_next = NULL;
 		h->b_prev = NULL;
 		h->b_data = b;
-		h->b_prev_free = h-1;
-		h->b_next_free = h+1;
+		h->b_prev_free = h - 1;
+		h->b_next_free = h + 1;
 		h++;
-		NR_BUFFERS++;
-		if (b == (void *)0x100000)
-			b = (void *)0xa0000;
 	}
 	h--;
 	free_list = start_buffer;
-	free_list->b_prev_free = h; // NR_BUFFERS != 0 assumed
+	free_list->b_prev_free = h;
 	h->b_next_free = free_list;
 }

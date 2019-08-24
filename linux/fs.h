@@ -17,7 +17,7 @@
 #define NR_INODE 32
 #define NR_FILE 64
 #define NR_SUPER 8
-#define NR_BUFFERS nr_buffers
+#define NR_BUFFERS 128
 #define NR_DIRECT 12
 #define BLOCK_SIZE 1024
 #define BLOCK_SIZE_BITS 10
@@ -233,7 +233,7 @@ extern int root_dev;
 void ll_rw_block(int rw, struct buf *b);
 
 // fs/buffer.c
-void init_buffer(unsigned long buffer_end);
+void init_buffer(void);
 struct buf *bread(int dev, int block);
 void bwrite(struct buf *b);
 void brelse(struct buf *b);
