@@ -100,7 +100,7 @@ int fs_rmdir(const char *path)
 
 int fs_link(const char *oldpath, const char *newpath)
 {
-	struct inode *ip = namei(newpath);
+	struct inode *ip = namei(oldpath);
 	int ret = linki(newpath, ip);
 	iput(ip);
 	return ret;
