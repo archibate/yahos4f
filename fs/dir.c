@@ -78,7 +78,7 @@ int dir_destroy(struct inode *dip)
 	}
 	while (iread(dip, pos, &de, DIR_ENTRY_SIZE) == DIR_ENTRY_SIZE) {
 		if (de.d_ino) {
-			warning("dir_not_empty");
+			//warning("dir_not_empty");
 			return -1; /* ENOTEMPTY */
 		}
 		pos += de.d_entry_size;
@@ -249,7 +249,8 @@ int dir_init(struct inode *dip, struct inode *pip)
 	return 0;
 }
 
-struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode)
+struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode,
+		unsigned int nod)
 {
 	if (!S_ISDIR(dip->i_mode))
 		return NULL; /* ENOTDIR */
@@ -259,7 +260,7 @@ struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode)
 		warning("cannot ext2_alloc_inode");
 		return NULL;
 	}
-	init_inode(ip, mode);
+	init_inode(ip, mode, nod);
 
 	if (dir_link(dip, name, ip) < 0) {
 		ext2_free_inode(ip);

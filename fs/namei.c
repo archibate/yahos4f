@@ -69,11 +69,26 @@ int linki(const char *path, struct inode *ip)
 struct inode *creati(const char *path, unsigned int mode)
 {
 	struct inode *dip, *ip;
+	if (S_ISCHR(mode) || S_ISBLK(mode))
+		return NULL;
 	if (!(dip = path_name(&path)))
 		return NULL;
-	ip = dir_creati(dip, path, mode);
+	ip = dir_creati(dip, path, mode, 0);
 	iput(dip);
 	return ip;
+}
+
+int fs_mknod(const char *path, unsigned int mode, unsigned int nod)
+{
+	struct inode *dip, *ip;
+	if (!S_ISCHR(mode) && !S_ISBLK(mode))
+		return -1;
+	if (!(dip = path_name(&path)))
+		return -1;
+	ip = dir_creati(dip, path, mode, nod);
+	iput(dip);
+	if (ip) iput(ip);
+	return ip ? 0 : -1;
 }
 
 int fs_mkdir(const char *path, unsigned int mode)
@@ -101,6 +116,7 @@ int fs_rmdir(const char *path)
 int fs_link(const char *oldpath, const char *newpath)
 {
 	struct inode *ip = namei(oldpath);
+	if (!ip) return -1;
 	int ret = linki(newpath, ip);
 	iput(ip);
 	return ret;

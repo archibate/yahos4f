@@ -104,3 +104,4 @@ _syscall1(6, int, rmdir, const char __user *);
 _syscall2(7, int, mkdir, const char __user *, unsigned int);
 _syscall2(8, int, link, const char __user *, const char __user *);
 _syscall1(9, int, unlink, const char __user *);
+_syscall3(10, int, mknod, const char __user *, unsigned int, unsigned int);

@@ -15,6 +15,11 @@ static int sys_mkdir(const char __user *path, unsigned int mode)
 	return fs_mkdir(path, mode);
 }
 
+static int sys_mknod(const char __user *path, unsigned int mode, unsigned int nod)
+{
+	return fs_mknod(path, mode, nod);
+}
+
 static int sys_rmdir(const char __user *path)
 {
 	return fs_rmdir(path);

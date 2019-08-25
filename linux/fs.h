@@ -11,6 +11,9 @@
 #define HDA_DEV 1
 #define HDB_DEV 2
 
+#define TTY_DRV 1
+#define NR_DRV 16
+
 #define SUPER_MAGIC 0xef53
 
 #define NR_OPEN 20
@@ -222,8 +225,12 @@ struct dir_entry {
 	unsigned char d_type;
 };
 
-extern struct inode inode_table[NR_INODE];
-extern struct file file_table[NR_FILE];
+struct char_drive {
+	size_t (*read)(struct inode *ip, void *buf, size_t size);
+	size_t (*write)(struct inode *ip, const void *buf, size_t size);
+};
+
+extern struct char_drive drv_table[NR_DRV];
 extern struct super_block super_block[NR_SUPER];
 extern struct buf *start_buffer;
 extern int nr_buffers;
@@ -255,10 +262,11 @@ void iput(struct inode *ip);
 void sync_inodes(void);
 void ext2_free_inode(struct inode *ip);
 struct inode *ext2_alloc_inode(struct inode *ip);
-void init_inode(struct inode *ip, unsigned int mode);
+void init_inode(struct inode *ip, unsigned int mode, unsigned int nod);
 
 // fs/dir.c
-struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode);
+struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode,
+		unsigned int nod);
 int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos);
 int dir_link(struct inode *dip, const char *name, struct inode *ip);
 int dir_unlink(struct inode *dip, const char *name, int rd);
@@ -268,7 +276,8 @@ int dir_destroy(struct inode *dip);
 // fs/path.c
 struct inode *dir_geti(struct inode *dip, const char *path);
 struct inode *dir_getp(struct inode *dip, const char **ppath);
-struct inode *dir_creati(struct inode *dip, const char *path, unsigned int mode);
+struct inode *dir_creati(struct inode *dip, const char *path, unsigned int mode,
+		unsigned int nod);
 int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode);
 int dir_linki(struct inode *dip, const char *path, struct inode *ip);
 int dir_unlinki(struct inode *dip, const char *path);
@@ -279,6 +288,7 @@ struct inode *namei(const char *path);
 struct inode *namep(const char **path);
 int linki(const char *path, struct inode *ip);
 struct inode *creati(const char *path, unsigned int mode);
+int fs_mknod(const char *path, unsigned int mode, unsigned int nod);
 int fs_link(const char *oldpath, const char *newpath);
 int fs_mkdir(const char *path, unsigned int mode);
 int fs_unlink(const char *path);

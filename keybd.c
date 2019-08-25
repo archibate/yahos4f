@@ -23,7 +23,8 @@ static void kb_putc(int c)
 		return;
 	cputc(c);
 	fifo_put(&kb_fifo, c);
-	wake_up(&kb_wait);
+	if (c == '\n')
+		wake_up(&kb_wait);
 }
 
 // Keyboard Map {{{

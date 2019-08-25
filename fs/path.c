@@ -77,12 +77,13 @@ bad:
 	return -1;
 }
 
-struct inode *dir_creati(struct inode *dip, const char *path, unsigned int mode)
+struct inode *dir_creati(struct inode *dip, const char *path, unsigned int mode,
+		unsigned int nod)
 {
 	struct inode *pip = dir_getp(dip, &path), *ip;
 	if (!pip)
 		return NULL;
-	ip = dir_creat(pip, path, mode);
+	ip = dir_creat(pip, path, mode, nod);
 	iput(pip);
 	return ip;
 }
@@ -92,7 +93,7 @@ int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode)
 	struct inode *pip = dir_getp(dip, &path), *ip;
 	if (!pip)
 		return -1;
-	ip = dir_creat(pip, path, (mode & ~S_IFMT) | S_IFDIR);
+	ip = dir_creat(pip, path, (mode & ~S_IFMT) | S_IFDIR, 0);
 	if (!ip)
 		goto bad;
 	if (dir_init(ip, pip) == -1) {
@@ -105,7 +106,6 @@ int dir_mkdiri(struct inode *dip, const char *path, unsigned int mode)
 	return 0;
 bad:
 	iput(pip);
-	iput(ip);
 	return -1;
 }
 

@@ -23,6 +23,7 @@ static struct inode *alloc_inode(void)
 		struct inode *ip = &inode[i];
 		if (!ip->i_count) {
 			ip->i_count = 1;
+			memset(ip, 0, sizeof(struct d_inode));
 			return ip;
 		}
 	}
@@ -159,7 +160,7 @@ again:
 		*p |= sel;
 		bwrite(b);
 		brelse(b);
-		ip->i_sb->s_ninodes_free--;
+		ip->i_sb->s_nblocks_free--;
 		update_super(ip->i_sb);
 		return goal;
 	}
@@ -176,6 +177,8 @@ oncer:
 
 static void ext2_free_inode_blocks(struct inode *ip)
 {
+	if (S_ISCHR(ip->i_mode) || S_ISBLK(ip->i_mode))
+		return;
 	for (int i = 0; i < NR_DIRECT; i++) {
 		unsigned int *p = &ip->i_zone[i];
 		if (!*p) continue;
@@ -251,7 +254,7 @@ again:
 		*p |= sel;
 		bwrite(b);
 		brelse(b);
-		ip->i_sb->s_nblocks_free--;
+		ip->i_sb->s_ninodes_free--;
 		update_super(ip->i_sb);
 		struct inode *rip = alloc_inode();
 		rip->i_dev = ip->i_dev;
@@ -399,6 +402,14 @@ static size_t do_irw(struct inode *ip, int rw, off_t pos, void *buf, size_t size
 
 size_t iread(struct inode *ip, off_t pos, void *buf, size_t size)
 {
+	if (S_ISCHR(ip->i_mode)) {
+		unsigned int i = ip->i_zone[0];
+		if (!i || i >= NR_DRV || !drv_table[i].read) {
+			warning("undefined character device number");
+			return 0;
+		}
+		return (*drv_table[i].read)(ip, buf, size);
+	}
 	if (pos > ip->i_size) {
 		warning("offset out of range (%d > %d)", pos, ip->i_size);
 		return 0;
@@ -411,6 +422,14 @@ size_t iread(struct inode *ip, off_t pos, void *buf, size_t size)
 
 size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size)
 {
+	if (S_ISCHR(ip->i_mode)) {
+		int i = ip->i_zone[0];
+		if (!i || i >= NR_DRV || !drv_table[i].write) {
+			warning("undefined character device number");
+			return 0;
+		}
+		return (*drv_table[i].write)(ip, buf, size);
+	}
 	if (pos > ip->i_size) {
 		warning("offset out of range (%d > %d)", pos, ip->i_size);
 		return 0;
@@ -423,13 +442,15 @@ size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size)
 	return size - rest;
 }
 
-void init_inode(struct inode *ip, unsigned int mode)
+void init_inode(struct inode *ip, unsigned int mode, unsigned int nod)
 {
 	memset(ip, 0, INODE_SIZE);
 	//ip->i_ctime = curr_time;
 	//ip->i_atime = curr_time;
 	//ip->i_mtime = curr_time;
 	ip->i_mode = mode;
+	if (S_ISCHR(mode) || S_ISBLK(mode))
+		ip->i_zone[0] = nod;
 }
 
 void sync_inodes(void)
@@ -460,7 +481,7 @@ void fs_test(void)
 	printk("");
 
 	struct inode *ip;
-#if 1
+#if 0
 	fs_unlink("/dev/simp");
 	fs_rmdir("/dev");
 	if (fs_mkdir("/dev", S_DFDIR) == -1)
@@ -475,12 +496,14 @@ void fs_test(void)
 
 	iput(ip);
 #endif
+	fs_mkdir("/dev", S_DFDIR);
+	fs_mknod("/dev/tty", S_IFCHR | 0644, TTY_DRV);
 
-	static char buf[233];
-	ip = namei("/dev/simp");
-	if (!ip)
-		panic("failed to namei for /dev/simp");
+	static char buf[23];
+	ip = namei("/dev/tty");
+	printk("!!!!!!");
 	buf[iread(ip, 0, buf, sizeof(buf) - 1)] = 0;
 	iput(ip);
-	printk("%s", buf);
+	printk("read result: %s", buf);
+	fs_test();
 }
