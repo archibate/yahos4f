@@ -12,6 +12,8 @@
 #define HDB_DEV 2
 
 #define TTY_DRV 1
+#define ZERO_DRV 2
+#define NULL_DRV 3
 #define NR_DRV 16
 
 #define SUPER_MAGIC 0xef53
@@ -226,8 +228,9 @@ struct dir_entry {
 };
 
 struct char_drive {
-	size_t (*read)(struct inode *ip, void *buf, size_t size);
-	size_t (*write)(struct inode *ip, const void *buf, size_t size);
+	size_t (*read)(struct inode *ip, off_t pos, void *buf, size_t size);
+	size_t (*write)(struct inode *ip, off_t pos, const void *buf,
+			size_t size);
 };
 
 extern struct char_drive drv_table[NR_DRV];

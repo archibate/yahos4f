@@ -405,10 +405,18 @@ size_t iread(struct inode *ip, off_t pos, void *buf, size_t size)
 	if (S_ISCHR(ip->i_mode)) {
 		unsigned int i = ip->i_zone[0];
 		if (!i || i >= NR_DRV || !drv_table[i].read) {
-			warning("undefined character device number");
+			warning("undefined character device number %d", i);
 			return 0;
 		}
-		return (*drv_table[i].read)(ip, buf, size);
+		return (*drv_table[i].read)(ip, pos, buf, size);
+	}
+	if (S_ISBLK(ip->i_mode)) {
+		unsigned int dev = ip->i_zone[0];
+		if (!dev) {
+			warning("undefined block device number %d", dev);
+			return 0;
+		}
+		return blk_read(dev, 0, pos, buf, size) ? size : 0;
 	}
 	if (pos > ip->i_size) {
 		warning("offset out of range (%d > %d)", pos, ip->i_size);
@@ -425,10 +433,18 @@ size_t iwrite(struct inode *ip, off_t pos, const void *buf, size_t size)
 	if (S_ISCHR(ip->i_mode)) {
 		int i = ip->i_zone[0];
 		if (!i || i >= NR_DRV || !drv_table[i].write) {
-			warning("undefined character device number");
+			warning("undefined character device number %d", i);
 			return 0;
 		}
-		return (*drv_table[i].write)(ip, buf, size);
+		return (*drv_table[i].write)(ip, pos, buf, size);
+	}
+	if (S_ISBLK(ip->i_mode)) {
+		unsigned int dev = ip->i_zone[0];
+		if (!dev) {
+			warning("undefined block device number %d", dev);
+			return 0;
+		}
+		return blk_write(dev, 0, pos, buf, size) ? size : 0;
 	}
 	if (pos > ip->i_size) {
 		warning("offset out of range (%d > %d)", pos, ip->i_size);
@@ -498,6 +514,9 @@ void fs_test(void)
 #endif
 	fs_mkdir("/dev", S_DFDIR);
 	fs_mknod("/dev/tty", S_IFCHR | 0644, TTY_DRV);
+	fs_mknod("/dev/zero", S_IFCHR | 0644, ZERO_DRV);
+	fs_mknod("/dev/null", S_IFCHR | 0644, NULL_DRV);
+	fs_mknod("/dev/hda", S_IFBLK | 0644, HDA_DEV);
 
 	static char buf[23];
 	ip = namei("/dev/tty");

@@ -40,7 +40,7 @@ lib/lib.a: lib/start.o lib/syscall.o
 	@echo + [ar] $@
 	@ar cqs $@ $^
 
-kernel: kernel.o main.o conio.o gdt.o idt.o ient.o pic.o pit.o keybd.o tss.o sched.o cont.o user.o syscall.o proc.o cmos.o mm/mmu.o mm/mman.o mm/mallo.o mm/vmm.o mm/pmm.o fs/ide.o fs/buffer.o fs/rwblk.o fs/super.o fs/inode.o fs/dir.o fs/path.o fs/namei.o fs/blkrw.o fs/exec.o fs/dev.o misc/misc.a
+kernel: kernel.o main.o conio.o gdt.o idt.o ient.o pic.o pit.o keybd.o tss.o sched.o cont.o user.o syscall.o proc.o cmos.o mm/mmu.o mm/mman.o mm/mallo.o mm/vmm.o mm/pmm.o fs/ide.o fs/buffer.o fs/rwblk.o fs/super.o fs/inode.o fs/dir.o fs/path.o fs/namei.o fs/blk_drv.o fs/exec.o fs/chr_drv.o misc/misc.a
 	@echo + [ld] $@
 	@ld -m elf_i386 -e _start -Ttext 0x100000 -o $@ $^ `gcc -m32 -print-libgcc-file-name`
 
