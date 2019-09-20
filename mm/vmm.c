@@ -16,10 +16,9 @@ struct vm_region *new_vm_region(struct mm *mm, void __user *p, size_t size)
 
 	struct vm_region *vm;
 	for (vm = mm->regs; vm; vm = vm->next) {
-		//printk("%p->%p vs %p->%p", start, end, vm->start, vm->end);
 		if (	(vm->start <= start && start < vm->end) ||
 			(vm->start <= end && end < vm->end)) {
-			warning("range overlapped");
+			warning("map vm range overlapped");
 			return NULL;
 		}
 	}

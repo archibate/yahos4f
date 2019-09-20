@@ -473,19 +473,7 @@ void sync_inodes(void)
 {
 }
 
-static const char *stros(int id)
-{
-	switch (id) {
-	case 0: return "Linux";
-	case 1: return "GNU/Hurd";
-	case 2: return "MASIX";
-	case 3: return "FreeBSD";
-	case 4: return "BSD4.4-Lite";
-	case 233: return "YahOS";
-	default: return "Other";
-	}
-}
-
+#if 0
 void fs_test(void)
 {
 	struct super_block *s = read_super(ROOT_DEV);
@@ -512,12 +500,8 @@ void fs_test(void)
 
 	iput(ip);
 #endif
-	fs_mkdir("/dev", S_DFDIR);
-	fs_mknod("/dev/tty", S_IFCHR | 0644, TTY_DRV);
-	fs_mknod("/dev/zero", S_IFCHR | 0644, ZERO_DRV);
-	fs_mknod("/dev/null", S_IFCHR | 0644, NULL_DRV);
-	fs_mknod("/dev/hda", S_IFBLK | 0644, HDA_DEV);
 
+#if 0
 	static char buf[23];
 	ip = namei("/dev/tty");
 	printk("!!!!!!");
@@ -525,4 +509,6 @@ void fs_test(void)
 	iput(ip);
 	printk("read result: %s", buf);
 	fs_test();
+#endif
 }
+#endif

@@ -138,11 +138,8 @@ struct inode {
 	unsigned int i_on_addr;
 };
 
-typedef long off_t;
 struct file {
-	unsigned short f_mode;
-	unsigned short f_flags;
-	unsigned short f_count;
+	unsigned int f_mode;
 	struct inode *f_inode;
 	off_t f_pos;
 };
@@ -303,3 +300,6 @@ int blk_write(int dev, int blk, int addr, const void *buf, size_t size);
 
 // fs/exec.c
 int do_execve(const char *path);
+
+// fs/vfs.c
+void init_fs(void);

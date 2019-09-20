@@ -2,6 +2,7 @@
 #include <linux/conio.h>
 #include <linux/keybd.h>
 #include <linux/fs.h>
+#include <memory.h>
 
 static size_t tty_write(struct inode *ip, off_t pos, const void *buf,
 		size_t size)

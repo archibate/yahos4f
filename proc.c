@@ -3,6 +3,7 @@
 #include <linux/mman.h>
 #include <linux/eflags.h>
 #include <linux/vmm.h>
+#include <linux/fs.h>
 #include <stddef.h>
 
 static int last_pid = 0;
@@ -39,6 +40,7 @@ struct task *new_task(struct task *parent)
 	task[i] = p;
 	p->stack = malloc(STACK_SIZE);
 	p->mm = calloc(1, sizeof(struct mm));
+	p->file = calloc(NR_OPEN, sizeof(struct file));
 	asm volatile ("mov %%cr3, %0" : "=r" (p->mm->pgd)); // todo: new_mm(p->mm)
 	p->ppid = parent->pid;
 	p->pid = last_pid;

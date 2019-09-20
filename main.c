@@ -44,9 +44,8 @@ void main(void)
 	irq_setenable(1, 1);
 
 	read_super(ROOT_DEV);
+	init_fs();
 
-	extern void fs_test(void);
-	setup_task(new_task(current), fs_test, NULL)->priority = 2;
 	setup_task(new_task(current), do_execve, "/bin/init")->priority = 2;
 
 	for (;;)

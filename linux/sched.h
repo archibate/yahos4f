@@ -25,6 +25,7 @@ struct task {
 	unsigned long ebss;
 	unsigned long brk;
 	unsigned long stop;
+	struct file *file;
 };
 
 #define INITIAL_TASK	{ \
