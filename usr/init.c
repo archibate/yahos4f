@@ -13,8 +13,7 @@ int main(int argc, char **argv)
 
 	_write(1, "init started\n", 13);
 
-	char *argv_run[] = {"/bin/cat", "../etc/issue", NULL};
-	execv(argv_run[0], argv_run);
+	execlp("cat", "/etc/issue", NULL);
 
 	return 0;
 }

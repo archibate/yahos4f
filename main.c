@@ -15,6 +15,14 @@
 
 int root_dev = HDA_DEV;
 
+int run_init(void)
+{
+	char *argv[] = {"/bin/init", "-s", NULL};
+	char *envp[] = {"PATH=/sbin:/bin:/usr/sbin:/usr/bin",
+			"HOME=/root", NULL};
+	return do_execve("/bin/init", argv, envp);
+}
+
 #if 0
 void cmos_test(void)
 {
@@ -25,13 +33,6 @@ void cmos_test(void)
 			t.tm_hour, t.tm_min, t.tm_sec);
 }
 #endif
-
-int run_init(void)
-{
-	char *argv[] = {"/bin/init", "-s", NULL};
-	char *envp[] = {"BOOT=yahos", "HOME=/root", NULL};
-	return do_execve("/bin/init", argv, envp);
-}
 
 void main(void)
 {

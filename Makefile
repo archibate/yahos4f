@@ -14,7 +14,7 @@ run-qemu-debug: kernel hda.img
 run-qemu-hd: hda.img
 	qemu-system-i386 -drive file=hda.img,index=0,media=disk,driver=raw
 
-hda.img: boot/boot Image bin/init bin/cat bin/env bin/true
+hda.img: boot/boot Image bin/init bin/cat bin/env bin/true bin/echo
 	sh tools/mkhda.sh
 
 boot/%: boot/%.asm
@@ -33,12 +33,12 @@ Image: boot/head kernel
 	@gcc -nostdlib -fno-stack-protector -ggdb -gstabs+ -I. -Iinclude -m32 -c -o $@ $<
 
 ifneq (,$(shell [ -f lib/lib.a ] || echo 1))
-lib/lib.a: lib/vsprintf.o lib/sprintf.o lib/memcpy.o lib/memset.o lib/strcmp.o lib/strchr.o lib/strlen.o lib/strcpy.o
+lib/lib.a: lib/vsprintf.o lib/sprintf.o lib/memcpy.o lib/memset.o lib/strcmp.o lib/strchr.o lib/strlen.o lib/strcpy.o lib/strcat.o
 	@echo + [ar] $@
 	@ar cqs $@ $^
 endif
 
-usr/lib/lib.a: usr/lib/start.o usr/lib/syscall.o usr/lib/exec.o
+usr/lib/lib.a: usr/lib/start.o usr/lib/syscall.o usr/lib/exec.o usr/lib/env.o
 	@echo + [ar] $@
 	@ar cqs $@ $^
 
@@ -46,7 +46,7 @@ kernel: kernel.o main.o conio.o gdt.o idt.o ient.o pic.o pit.o keybd.o tss.o sch
 	@echo + [ld] $@
 	@ld -m elf_i386 -e _start -Ttext 0x100000 -o $@ $^ `gcc -m32 -print-libgcc-file-name`
 
-bin/%: usr/%.o lib/lib.a usr/lib/lib.a
+bin/%: usr/%.o usr/lib/lib.a lib/lib.a
 	@mkdir -p $(@D)
 	@echo + [ld] $@
 	@ld -m elf_i386 -e _start -Ttext 0x1000000 -o $@ $^ `gcc -m32 -print-libgcc-file-name`

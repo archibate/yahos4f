@@ -7,7 +7,7 @@ void cat(const char *path)
 	int fd = path ? _open(path, O_RDONLY) : 0;
 	if (fd == -1) {
 		_write(2, path, strlen(path));
-		_write(2, ": error\n", 8);
+		_write(2, ": open error\n", 13);
 		return;
 	}
 
