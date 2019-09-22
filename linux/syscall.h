@@ -121,3 +121,5 @@ _syscall3(14, off_t, lseek, int, off_t, int);
 _syscall2(15, int, dup2, int, int);
 _syscall1(16, int, dup, int);
 _syscall1(17, int, close, int);
+_syscall3(18, int, execve, const char __user *, char __user *const __user *,
+		char __user *const __user *);

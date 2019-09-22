@@ -1,5 +1,7 @@
 run: run-qemu
 
+debug: run-qemu-debug
+
 run-bochs: bochsrc.bxrc hda.img
 	-bochs -qf $<
 
@@ -12,7 +14,7 @@ run-qemu-debug: kernel hda.img
 run-qemu-hd: hda.img
 	qemu-system-i386 -drive file=hda.img,index=0,media=disk,driver=raw
 
-hda.img: boot/boot Image bin/init
+hda.img: boot/boot Image bin/init bin/cat bin/env bin/true
 	sh tools/mkhda.sh
 
 boot/%: boot/%.asm
@@ -31,7 +33,7 @@ Image: boot/head kernel
 	@gcc -nostdlib -fno-stack-protector -ggdb -gstabs+ -I. -Iinclude -m32 -c -o $@ $<
 
 ifneq (,$(shell [ -f lib/lib.a ] || echo 1))
-lib/lib.a: lib/vsprintf.o lib/sprintf.o lib/memcpy.o lib/memset.o lib/strcmp.o lib/strchr.o lib/strlen.o 
+lib/lib.a: lib/vsprintf.o lib/sprintf.o lib/memcpy.o lib/memset.o lib/strcmp.o lib/strchr.o lib/strlen.o lib/strcpy.o
 	@echo + [ar] $@
 	@ar cqs $@ $^
 endif

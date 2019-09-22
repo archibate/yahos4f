@@ -48,6 +48,10 @@ struct task *get_proc(int pid);
 int sys_getpid(void);
 int sys_getppid(void);
 struct task *new_task(struct task *parent);
-struct task *setup_task(struct task *p, void *start, void *arg);
+struct task *setup_kernel_task(struct task *p, void *start, void *arg);
 void __attribute__((noreturn)) sys_exit(int status);
+/***** API PROBE BEGIN *****/
+void destroy_user_task(struct task *p);
+void free_task(struct task *p);
 int get_pid_index(int pid);
+/****** API PROBE END ******/

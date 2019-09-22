@@ -17,3 +17,4 @@
 #define PGSIZE	0x1000
 
 void init_mmu(void);
+void copyin_boot_pdes(unsigned long *pd);

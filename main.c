@@ -15,6 +15,7 @@
 
 int root_dev = HDA_DEV;
 
+#if 0
 void cmos_test(void)
 {
 	struct tm t;
@@ -22,7 +23,14 @@ void cmos_test(void)
 	printk("%02d/%02d/%02d %02d:%02d:%02d",
 			t.tm_year, t.tm_mon, t.tm_mday,
 			t.tm_hour, t.tm_min, t.tm_sec);
+}
+#endif
 
+int run_init(void)
+{
+	char *argv[] = {"/bin/init", "-s", NULL};
+	char *envp[] = {"BOOT=yahos", "HOME=/root", NULL};
+	return do_execve("/bin/init", argv, envp);
 }
 
 void main(void)
@@ -46,7 +54,7 @@ void main(void)
 	read_super(ROOT_DEV);
 	init_fs();
 
-	setup_task(new_task(current), do_execve, "/bin/init")->priority = 2;
+	setup_kernel_task(new_task(current), run_init, NULL)->priority = 2;
 
 	for (;;)
 		asm volatile ("sti\nhlt");

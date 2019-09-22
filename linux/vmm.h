@@ -32,3 +32,6 @@ struct mm
 int mmapz(struct mm *mm, void __user *p, size_t size);
 int mmapi(struct mm *mm, struct inode *ip, off_t pos, void __user *p, size_t size);
 int do_vm_fault(struct mm *mm, unsigned long addr);
+struct mm *new_mm(void);
+void free_mm(struct mm *mm);
+void use_mm(struct mm *mm);

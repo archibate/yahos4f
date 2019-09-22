@@ -7,6 +7,25 @@
 #include <linux/fs.h>
 #include <string.h>
 
+struct mm *new_mm(void)
+{
+	struct mm *mm = calloc(1, sizeof(struct mm));
+	mm->pgd = alloc_page();
+	copyin_boot_pdes(mm->pgd);
+	return mm;
+}
+
+void use_mm(struct mm *mm)
+{
+	asm volatile ("mov %0, %%cr3" :: "r" (mm->pgd));
+}
+
+void free_mm(struct mm *mm)
+{
+	free_page(mm->pgd);
+	free(mm);
+}
+
 static int map_page(struct mm *mm, void __user *p, void *page);
 
 struct vm_region *new_vm_region(struct mm *mm, void __user *p, size_t size)

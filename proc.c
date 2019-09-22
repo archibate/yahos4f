@@ -38,20 +38,18 @@ struct task *new_task(struct task *parent)
 	int i = find_empty_task();
 	struct task *p = calloc(1, sizeof(struct task));
 	task[i] = p;
-	p->stack = malloc(STACK_SIZE);
-	p->mm = calloc(1, sizeof(struct mm));
-	p->file = calloc(NR_OPEN, sizeof(struct file));
-	asm volatile ("mov %%cr3, %0" : "=r" (p->mm->pgd)); // todo: new_mm(p->mm)
 	p->ppid = parent->pid;
 	p->pid = last_pid;
+	p->stack = malloc(STACK_SIZE);
+	p->file = calloc(NR_OPEN, sizeof(struct file));
 	return p;
 }
 
 void __attribute__((noreturn)) sys_exit(int status)
 {
 	int i = get_pid_index(current->pid);
-	if (i == -1)
-		panic("cannot get current pid index");
+	if (i == -1) panic("cannot get current pid index");
+	free_task(current);
 	free(current);
 	task[i] = current = NULL;
 	schedule();
@@ -64,7 +62,7 @@ static void __attribute__((noreturn)) __sys_exit(void)
 	sys_exit(ret);
 }
 
-struct task *setup_task(struct task *p, void *start, void *arg)
+struct task *setup_kernel_task(struct task *p, void *start, void *arg)
 {
 	void **sp = p->stack + STACK_SIZE;
 	*--sp = arg;
@@ -73,4 +71,21 @@ struct task *setup_task(struct task *p, void *start, void *arg)
 	p->ctx.sp = (long)sp;
 	p->ctx.eflags = FL_1F;
 	return p;
+}
+
+void destroy_user_task(struct task *p)
+{
+	if (p->mm) free_mm(p->mm);
+	p->mm = NULL;
+	if (p->executable) iput(p->executable);
+	p->executable = NULL;
+}
+
+void free_task(struct task *p)
+{
+	destroy_user_task(p);
+	free(p->stack);
+	p->stack = NULL;
+	free(p->file);
+	p->file = NULL;
 }

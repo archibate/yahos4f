@@ -1,10 +1,16 @@
 #include <linux/kernel.h>
 #include <linux/mmu.h>
+#include <string.h>
 
 #define BOOT_PTS_NR (0x400000 / (4096*1024))
 
 static unsigned long __attribute__((aligned(4096))) boot_pts[BOOT_PTS_NR][1024];
 static unsigned long __attribute__((aligned(4096))) boot_pd[1024];
+
+void copyin_boot_pdes(unsigned long *pd)
+{
+	memcpy(pd, boot_pd, PGSIZE);//BOOT_PTS_NR * sizeof(unsigned long));
+}
 
 void init_mmu(void)
 {

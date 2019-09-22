@@ -1,11 +1,9 @@
 #include <linux/syscall.h>
 #include <stddef.h>
 
-int main(int argc, char **argv);
+int main(int argc, char **argv, char **envp);
 
-void __attribute__((noreturn)) _start(void)
+void __attribute__((noreturn)) _start(int argc, char **argv, char **envp)
 {
-	int argc = 0;
-	char **argv = NULL;
-	_exit(main(argc, argv));
+	_exit(main(argc, argv, envp));
 }
