@@ -123,3 +123,4 @@ _syscall1(16, int, dup, int);
 _syscall1(17, int, close, int);
 _syscall3(18, int, execve, const char __user *, char __user *const __user *,
 		char __user *const __user *);
+_syscall1(19, int, chdir, const char __user *);

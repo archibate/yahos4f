@@ -28,49 +28,44 @@ void free_mm(struct mm *mm)
 
 static int map_page(struct mm *mm, void __user *p, void *page);
 
-struct vm_region *new_vm_region(struct mm *mm, void __user *p, size_t size)
+struct vm_region *new_vm_region(struct mm *mm, void __user *p, size_t filesz, size_t memsz)
 {
-	unsigned long start = (unsigned long)p & PGMASK;
-	unsigned end = (start + size + PGSIZE - 1) & PGMASK;
+	unsigned long start = (unsigned long)p;
+	if (start & PGOFFS) {
+		warning("start addr %p not aligned", p);
+		return NULL; /* EINVAL */
+	}
+	unsigned end = (start + memsz + PGSIZE - 1) & PGMASK;
 
 	struct vm_region *vm;
 	for (vm = mm->regs; vm; vm = vm->next) {
 		if (	(vm->start <= start && start < vm->end) ||
 			(vm->start <= end && end < vm->end)) {
-			warning("map vm range overlapped");
-			return NULL;
+			warning("map vm range overlapped at %p", p);
+			return NULL; /* EFAULT */
 		}
 	}
 	vm = calloc(1, sizeof(struct vm_region));
 	vm->start = start;
 	vm->end = end;
+	vm->size = filesz;
 	vm->next = mm->regs;
 	vm->prev = NULL;
 	mm->regs = vm;
 	return vm;
 }
 
-int mmapz(struct mm *mm, void __user *p, size_t size)
+int mmapi(struct mm *mm, struct inode *ip, off_t pos, void __user *p, size_t filesz, size_t memsz)
 {
-	if (!size)
+	if (filesz > memsz)
+		memsz = filesz;
+	if (!memsz)
 		return 0;
-	//printk("mmap %p %p ZERO", p, size);
-	struct vm_region *vm = new_vm_region(mm, p, size);
-	if (!vm) return -1;
-	vm->type = VM_BSS;
-	vm->ip = NULL;
-	vm->offset = 0;
-	return 0;
-}
-
-int mmapi(struct mm *mm, struct inode *ip, off_t pos, void __user *p, size_t size)
-{
-	if (!size)
-		return 0;
+	if (!ip && filesz)
+		return -1; /* EINVAL */
 	//printk("mmap %p %p D%dI%d@%#x", p, size, ip->i_dev,ip->i_ino, pos);
-	struct vm_region *vm = new_vm_region(mm, p, size);
+	struct vm_region *vm = new_vm_region(mm, p, filesz, memsz);
 	if (!vm) return -1;
-	vm->type = VM_FILE;
 	vm->ip = ip;
 	vm->offset = pos;
 	return 0;
@@ -80,26 +75,18 @@ static int do_vm_region_fault(struct mm *mm,
 		struct vm_region *vm, unsigned long addr)
 {
 	int ret = 0;
-	size_t size_read, off;
 	void *page = alloc_page();
-	switch (vm->type) {
-	case VM_BSS:
-		memset(page, 0, PGSIZE);
-		break;
-	case VM_FILE:
-		off = addr - vm->start;
-		size_read = iread(vm->ip, vm->offset + off, page, PGSIZE);
-		if (size_read != PGSIZE) {
-			warning("iread(vm->ip) != PGSIZE");
-			memset(page + size_read, 0, PGSIZE - size_read);
-		}
-		break;
-	default:
-		warning("unknown vm->type=%d", vm->type);
-		free_page(page);
-		ret = -3;
-		goto out;
+	size_t off = addr - vm->start;
+	size_t size_read = 0;
+	if (off < vm->size) {
+		size_t size = vm->size - off;
+		if (size > PGSIZE)
+			size = PGSIZE;
+		size_read = iread(vm->ip, vm->offset + off, page, size);
+		if (size_read != size)
+			warning("iread(vm->ip) != size");
 	}
+	memset(page + size_read, 0, PGSIZE - size_read);
 	ret = map_page(mm, (void __user *)addr, page);
 out:
 	if (ret < 0)

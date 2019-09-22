@@ -75,9 +75,7 @@ static int execve_inode(struct inode *ip, char *const *argv, char *const *envp)
 	for (int i = 0; i < e.e_phnum; i++) {
 		iread(ip, e.e_phoff + i * sizeof(ph), &ph, sizeof(ph));
 		mmapi(current->mm, ip, ph.p_offset,
-				(void __user *)ph.p_paddr, ph.p_filesz);
-		mmapz(current->mm, (void __user *)ph.p_paddr + ph.p_filesz,
-				ph.p_memsz - ph.p_filesz);
+				(void __user *)ph.p_paddr, ph.p_filesz, ph.p_memsz);
 		if (ebss < ph.p_paddr + ph.p_memsz)
 			ebss = ph.p_paddr + ph.p_memsz;
 	}
@@ -86,7 +84,7 @@ static int execve_inode(struct inode *ip, char *const *argv, char *const *envp)
 	current->ebss = ebss;
 	current->brk = ebss;
 	current->stop = ebss + USER_STACK_SIZE - 8;
-	mmapz(current->mm, (void __user *)ebss, USER_STACK_SIZE);
+	mmapi(current->mm, NULL, 0, (void __user *)ebss, 0, USER_STACK_SIZE);
 
 	void __user *sp = (void __user *)current->stop;
 	stack_push_arguments(&sp, envp);

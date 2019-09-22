@@ -59,6 +59,16 @@ static int sys_execve(const char __user *path,
 	return do_execve(path_sys, argv_sys, envp_sys);
 }
 
+static int sys_chdir(const char __user *path)
+{
+	struct inode *ip = namei(path);
+	if (!ip) return -1;
+	if (current->cwd)
+		iput(current->cwd);
+	current->cwd = ip;
+	return 0;
+}
+
 void on_syscall(PUSHAD_ARGS)
 {
 	switch (eax) {

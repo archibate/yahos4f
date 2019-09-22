@@ -38,7 +38,7 @@ lib/lib.a: lib/vsprintf.o lib/sprintf.o lib/memcpy.o lib/memset.o lib/strcmp.o l
 	@ar cqs $@ $^
 endif
 
-usr/lib/lib.a: usr/lib/start.o usr/lib/syscall.o
+usr/lib/lib.a: usr/lib/start.o usr/lib/syscall.o usr/lib/exec.o
 	@echo + [ar] $@
 	@ar cqs $@ $^
 

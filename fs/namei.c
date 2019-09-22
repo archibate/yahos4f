@@ -8,13 +8,11 @@ static struct inode *path_name(const char **pp)
 	struct inode *dip;
 	if (**pp == '/') {
 		dip = iget(ROOT_DEV, ROOT_INO);
-		if (!dip) {
-			warning("iget(ROOT) == NULL");
-			return NULL;
-		}
+		if (!dip)
+			panic("iget(ROOT) == NULL");
 		for (; **pp == '/'; ++*pp);
 	} else {
-		dip = current->cwd;
+		dip = idup(current->cwd);
 		if (!dip) {
 			warning("current->cwd == NULL");
 			return NULL;

@@ -79,6 +79,9 @@ void destroy_user_task(struct task *p)
 	p->mm = NULL;
 	if (p->executable) iput(p->executable);
 	p->executable = NULL;
+	extern int sys_close(int i); // todo: arrange better
+	for (int i = 3; i < NR_OPEN; i++)
+		sys_close(i);
 }
 
 void free_task(struct task *p)
@@ -88,4 +91,5 @@ void free_task(struct task *p)
 	p->stack = NULL;
 	free(p->file);
 	p->file = NULL;
+	if (current->cwd) iput(current->cwd);
 }

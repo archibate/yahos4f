@@ -6,19 +6,12 @@
 
 struct inode;
 
-enum vm_type
-{
-	VM_FAULT = 0,
-	VM_BSS,
-	VM_FILE,
-};
-
 struct vm_region
 {
 	struct vm_region *prev, *next;
 	unsigned long start, end;
-	enum vm_type type;
 	struct inode *ip;
+	unsigned long size;
 	off_t offset;
 };
 
@@ -29,8 +22,7 @@ struct mm
 	unsigned long *pgd;
 };
 
-int mmapz(struct mm *mm, void __user *p, size_t size);
-int mmapi(struct mm *mm, struct inode *ip, off_t pos, void __user *p, size_t size);
+int mmapi(struct mm *mm, struct inode *ip, off_t pos, void __user *p, size_t filesz, size_t memsz);
 int do_vm_fault(struct mm *mm, unsigned long addr);
 struct mm *new_mm(void);
 void free_mm(struct mm *mm);

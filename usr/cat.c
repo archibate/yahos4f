@@ -5,13 +5,18 @@
 void cat(const char *path)
 {
 	int fd = path ? _open(path, O_RDONLY) : 0;
+	if (fd == -1) {
+		_write(2, path, strlen(path));
+		_write(2, ": error\n", 8);
+		return;
+	}
 
 	while (1) {
-		char buf[7];
-		memset(buf, 0, sizeof(buf));
-		if (_read(0, buf, sizeof(buf) - 1) <= 0)
+		char buf[256];
+		int size = _read(fd, buf, sizeof(buf) - 1);
+		if (size <= 0)
 			break;
-		_write(fd, buf, strlen(buf));
+		_write(1, buf, size);
 	}
 
 	if (fd) _close(fd);
