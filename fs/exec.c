@@ -56,7 +56,7 @@ static int execve_inode(struct inode *ip, char *const *argv, char *const *envp)
 		i >>= 6;
 	else if (current->egid == ip->i_gid)
 		i >>= 3;
-	if (!(i & S_XOTH))
+	if (!(i & S_IXOTH))
 		return -1; /* EACCES */
 
 	static Elf32_Ehdr e;

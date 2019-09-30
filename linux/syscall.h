@@ -52,7 +52,7 @@
 		for (;;) asm volatile ("ud2"); \
 	})
 #define _syscall0(i, rt, name) \
-	_SYSCALL rt _##name(void) \
+	_SYSCALL rt name(void) \
 	_DEF_SYS({ \
 		rt ret; \
 		asm volatile ("int $0x80" \
@@ -60,7 +60,7 @@
 		return ret; \
 	})
 #define _syscall1(i, rt, name, t1) \
-	_SYSCALL rt _##name(t1 x1) \
+	_SYSCALL rt name(t1 x1) \
 	_DEF_SYS({ \
 		rt ret; \
 		asm volatile ("int $0x80" \
@@ -68,7 +68,7 @@
 		return ret; \
 	})
 #define _syscall2(i, rt, name, t1, t2) \
-	_SYSCALL rt _##name(t1 x1, t2 x2) \
+	_SYSCALL rt name(t1 x1, t2 x2) \
 	_DEF_SYS({ \
 		rt ret; \
 		asm volatile ("int $0x80" \
@@ -76,7 +76,7 @@
 		return ret; \
 	})
 #define _syscall3(i, rt, name, t1, t2, t3) \
-	_SYSCALL rt _##name(t1 x1, t2 x2, t3 x3) \
+	_SYSCALL rt name(t1 x1, t2 x2, t3 x3) \
 	_DEF_SYS({ \
 		rt ret; \
 		asm volatile ("int $0x80" \
@@ -85,7 +85,7 @@
 		return ret; \
 	})
 #define _syscall4(i, rt, name, t1, t2, t3, t4) \
-	_SYSCALL rt _##name(t1 x1, t2 x2, t3 x3, t4 x4) \
+	_SYSCALL rt name(t1 x1, t2 x2, t3 x3, t4 x4) \
 	_DEF_SYS({ \
 		rt ret; \
 		asm volatile ("int $0x80" \
@@ -94,7 +94,7 @@
 		return ret; \
 	})
 #define _syscall5(i, rt, name, t1, t2, t3, t4, t5) \
-	_SYSCALL rt _##name(t1 x1, t2 x2, t3 x3, t4 x4, t5 x5) \
+	_SYSCALL rt name(t1 x1, t2 x2, t3 x3, t4 x4, t5 x5) \
 	_DEF_SYS({ \
 		rt ret; \
 		asm volatile ("int $0x80" \
@@ -124,3 +124,5 @@ _syscall1(17, int, close, int);
 _syscall3(18, int, execve, const char __user *, char __user *const __user *,
 		char __user *const __user *);
 _syscall1(19, int, chdir, const char __user *);
+_syscall0(20, int, fork);
+_syscall0(21, int, wait);

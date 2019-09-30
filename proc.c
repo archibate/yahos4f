@@ -6,7 +6,7 @@
 #include <linux/fs.h>
 #include <stddef.h>
 
-static int last_pid = 0;
+static int last_pid = 1;
 
 int sys_getpid(void)
 {
@@ -64,7 +64,7 @@ static void __attribute__((noreturn)) __sys_exit(void)
 
 struct task *setup_kernel_task(struct task *p, void *start, void *arg)
 {
-	void **sp = p->stack + STACK_SIZE;
+	void **sp = p->stack + STACK_SIZE - 4*13;
 	*--sp = arg;
 	*--sp = __sys_exit;
 	*--sp = start;

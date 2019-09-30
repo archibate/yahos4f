@@ -1,25 +1,26 @@
-#include <linux/syscall.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
 
 void cat(const char *path)
 {
-	int fd = path ? _open(path, O_RDONLY) : 0;
+	int fd = path ? open(path, O_RDONLY) : 0;
 	if (fd == -1) {
-		_write(2, path, strlen(path));
-		_write(2, ": open error\n", 13);
+		write(2, path, strlen(path));
+		write(2, ": open error\n", 13);
 		return;
 	}
 
 	while (1) {
 		char buf[256];
-		int size = _read(fd, buf, sizeof(buf) - 1);
+		int size = read(fd, buf, sizeof(buf) - 1);
 		if (size <= 0)
 			break;
-		_write(1, buf, size);
+		write(1, buf, size);
 	}
 
-	if (fd) _close(fd);
+	if (fd) close(fd);
 }
 
 int main(int argc, char **argv)

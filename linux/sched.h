@@ -21,7 +21,6 @@ struct task {
 	struct inode *cwd;
 	struct inode *executable;
 	unsigned int euid, egid;
-	unsigned long user_entry;
 	unsigned long ebss;
 	unsigned long brk;
 	unsigned long stop;
@@ -31,7 +30,7 @@ struct task {
 #define INITIAL_TASK	{ \
 		.priority = 1, \
 		.counter = 1, \
-		.pid = 1, \
+		.pid = 0, \
 	}
 
 #define NR_TASKS	64

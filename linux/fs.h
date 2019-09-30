@@ -70,6 +70,9 @@ struct d_inode {
 	unsigned char i_os_spec2[12];
 };
 
+#if 1
+#include <sys/stat.h>
+#else
 #define S_ISUID	04000
 #define S_ISGID	02000
 #define S_ISVTX	01000
@@ -106,6 +109,7 @@ struct d_inode {
 #define S_ISREG(m)	((m & S_IFMT) == S_IFREG)
 #define S_ISLNK(m)	((m & S_IFMT) == S_IFLNK)
 #define S_ISSOCK(m)	((m & S_IFMT) == S_IFSOCK)
+#endif
 
 struct inode {
 	unsigned short i_mode;

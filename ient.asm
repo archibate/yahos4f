@@ -29,6 +29,14 @@ asm_on_page_fault:
 	add esp, 4
 	iretd
 
+global fork_child_return
+fork_child_return:
+	mov esp, [esp + 4]
+	call __int_leave
+	popad
+	xor eax, eax
+	iretd
+
 global asm_on_syscall
 extern on_syscall
 asm_on_syscall:

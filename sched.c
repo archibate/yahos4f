@@ -1,5 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
+#include <linux/vmm.h>
 #include <stddef.h>
 
 struct task *task[NR_TASKS];
@@ -7,10 +8,16 @@ struct task *current;
 
 void switch_to(int i)
 {
+	struct mm *previous_mm;
 	struct task *previous;
 	if (current != task[i]) {
 		previous = current;
 		current = task[i];
+		printk("switch_diff %p->%p", previous, current);
+		if (current->mm) {
+			printk("switch_diff_mm...");
+			use_mm(current->mm);
+		}
 		switch_context(&previous->ctx, &current->ctx);
 	}
 }

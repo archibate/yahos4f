@@ -1,16 +1,10 @@
 #include <unistd.h>
 #include <stdlib.h>
-#include <linux/syscall.h>
 #include <string.h>
 #include <alloca.h>
 #include <stdarg.h>
 
 extern char **__envp;
-
-int execve(const char *path, char *const *argv, char *const *envp)
-{
-	return _execve(path, argv, envp);
-}
 
 int execv(const char *path, char *const *argv)
 {
@@ -61,12 +55,14 @@ int execvp(const char *path, char *const *argv)
 	} \
 	argv[i] = NULL;
 
+#define EXECL_EXIT()
+
 int execle(const char *path, const char *arg, ...)
 {
 	EXECL_GETER(path);
 	char *const *envp = va_arg(ap, char *const *);
 	int ret = execve(path, argv, envp);
-	va_end(ap);
+	EXECL_EXIT();
 	return ret;
 }
 
@@ -74,7 +70,7 @@ int execl(const char *path, const char *arg, ...)
 {
 	EXECL_GETER(path);
 	int ret = execv(path, argv);
-	va_end(ap);
+	EXECL_EXIT();
 	return ret;
 }
 
@@ -82,6 +78,6 @@ int execlp(const char *file, const char *arg, ...)
 {
 	EXECL_GETER(file);
 	int ret = execvp(file, argv);
-	va_end(ap);
+	EXECL_EXIT();
 	return ret;
 }

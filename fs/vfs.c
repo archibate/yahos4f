@@ -24,7 +24,7 @@ void init_fs(void)
 	printk("%d/%d blocks", s->s_nblocks - s->s_nblocks_free, s->s_nblocks);
 	printk("");
 
-	fs_mkdir("/dev", S_DFDIR);
+	fs_mkdir("/dev", S_IFDIR | 0755);
 	fs_mknod("/dev/tty", S_IFCHR | 0644, TTY_DRV);
 	fs_mknod("/dev/zero", S_IFCHR | 0644, ZERO_DRV);
 	fs_mknod("/dev/null", S_IFCHR | 0644, NULL_DRV);
