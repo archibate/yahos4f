@@ -13,11 +13,9 @@ void switch_to(int i)
 	if (current != task[i]) {
 		previous = current;
 		current = task[i];
-		printk("switch_diff %p->%p", previous, current);
-		if (current->mm) {
-			printk("switch_diff_mm...");
+		//printk("switch_diff %p->%p", previous, current);
+		if (current->mm)
 			use_mm(current->mm);
-		}
 		switch_context(&previous->ctx, &current->ctx);
 	}
 }

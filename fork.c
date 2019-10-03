@@ -5,8 +5,6 @@
 #include <linux/mman.h>
 #include <string.h>
 
-#define fork_mm(x) new_mm() // tmp
-
 static struct file *fork_file_table(struct file *old_ft)
 {
 	struct file *new_ft = calloc(NR_OPEN, sizeof(struct file));
@@ -16,7 +14,7 @@ static struct file *fork_file_table(struct file *old_ft)
 
 static int do_fork_from_to(struct task *old, struct task *new)
 {
-	new->mm = fork_mm(old);
+	new->mm = fork_mm(old->mm);
 	if (old->executable)
 		new->executable = idup(old->executable);
 	if (old->cwd)
@@ -35,11 +33,6 @@ static int do_fork_from_to(struct task *old, struct task *new)
 static int run_fork(void)
 {
 	extern void __attribute__((noreturn)) fork_child_return(void *uctx);
-	/*printk("!!!user ip=%p", ((int*)(current->stack + STACK_SIZE - 4*13))[8]);
-	printk("!!!user cs=%p", ((int*)(current->stack + STACK_SIZE - 4*13))[9]);
-	printk("!!!user ef=%p", ((int*)(current->stack + STACK_SIZE - 4*13))[10]);
-	printk("!!!user sp=%p", ((int*)(current->stack + STACK_SIZE - 4*13))[11]);
-	printk("!!!user ss=%p", ((int*)(current->stack + STACK_SIZE - 4*13))[12]);*/
 	fork_child_return(current->stack + STACK_SIZE - 4*13); // user context
 }
 

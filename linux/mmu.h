@@ -16,5 +16,7 @@
 #define PGMASK	0xfffff000
 #define PGSIZE	0x1000
 
+#define BOOT_PTS_NR (0x400000 / (4096*1024))
+
 void init_mmu(void);
 void copyin_boot_pdes(unsigned long *pd);

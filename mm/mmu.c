@@ -2,8 +2,6 @@
 #include <linux/mmu.h>
 #include <string.h>
 
-#define BOOT_PTS_NR (0x400000 / (4096*1024))
-
 static unsigned long __attribute__((aligned(4096))) boot_pts[BOOT_PTS_NR][1024];
 static unsigned long __attribute__((aligned(4096))) boot_pd[1024];
 

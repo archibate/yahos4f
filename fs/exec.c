@@ -74,8 +74,8 @@ static int execve_inode(struct inode *ip, char *const *argv, char *const *envp)
 	static Elf32_Phdr ph;
 	for (int i = 0; i < e.e_phnum; i++) {
 		iread(ip, e.e_phoff + i * sizeof(ph), &ph, sizeof(ph));
-		mmapi(current->mm, ip, ph.p_offset,
-				(void __user *)ph.p_paddr, ph.p_filesz, ph.p_memsz);
+		mmapi(current->mm, ip, ph.p_offset, (void __user *)ph.p_paddr,
+				ph.p_filesz, ph.p_memsz);
 		if (ebss < ph.p_paddr + ph.p_memsz)
 			ebss = ph.p_paddr + ph.p_memsz;
 	}

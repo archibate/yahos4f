@@ -33,7 +33,7 @@ void on_page_fault(PUSHAD_ARGS, unsigned long errcd)
 {
 	unsigned long addr;
 	asm volatile ("mov %%cr2, %0" : "=r" (addr));
-	if (!current->mm || do_vm_fault(current->mm, addr) == -1)
+	if (!current->mm || do_vm_fault(current->mm, addr, errcd) == -1)
 		panic("page fault in non-paged area at %p", addr);
 }
 

@@ -1,17 +1,19 @@
 #!/usr/bin/gdb -x
 # vim: ft=gdb ts=4 sts=4 tw=4
 
-file kernel
-target remote localhost:1234
+define cn
+		file kernel
+		target remote localhost:1234
+end
 
-define bl
+define boo
 	set architecture i8086
 	break *0x7c00
 	continue
 end
 
-define tm
-	break main
+define bc
+	break $arg0
 	continue
 end
 
@@ -19,3 +21,5 @@ define q
 	kill
 	quit
 end
+
+cn

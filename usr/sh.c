@@ -45,15 +45,14 @@ void command(char *s)
 
 	int pid = fork();
 	if (!pid) {
-		debug("child!!!!");
 		exit_stat = execvp(argv[0], argv);
 	} else if (pid > 0) {
-		debug("parent!!!!");
 		int i = 0;
-		while (wait(&exit_stat) != pid) {
+		while (wait(&exit_stat) != pid);
+		/*{
 			char c[2] = {'\r', "\\|/-"[(i++ >> 14) & 3]};
 			write(2, c, 2);
-		}
+		}*/
 	} else {
 		exit_stat = pid;
 	}
