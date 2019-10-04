@@ -2,13 +2,17 @@
 #include <linux/fs.h>
 #include <linux/sched.h>
 #include <linux/segment.h>
+#include <dirent.h>
 #include <string.h>
+#include <alloca.h>
 #include <fcntl.h>
 
 int sys_open(const char __user *path, int mode);
 int sys_write(int fd, const void __user *buf, size_t size);
 int sys_read(int fd, void __user *buf, size_t size);
 off_t sys_lseek(int fd, off_t offset, int whence);
+int sys_dirread(int fd, struct dirent __user *ent);
+int sys_dirrewind(int fd);
 int sys_dup2(int fd, int dirfd);
 int sys_dup(int fd);
 int sys_close(int fd);
@@ -37,7 +41,8 @@ int sys_open(const char __user *path, int mode)
 
 	struct inode *ip = namei(path);
 	if (!ip) return -1;
-	if (S_ISDIR(ip->i_mode)) return -1; /* EISDIR */
+	if (S_ISDIR(ip->i_mode) && !(mode & O_DIRECTORY)) return -1; /* EISDIR */
+	if (!S_ISDIR(ip->i_mode) && (mode & O_DIRECTORY)) return -1; /* ENOTDIR */
 
 	f->f_mode = mode;
 	f->f_inode = ip;
@@ -51,7 +56,7 @@ int sys_write(int fd, const void __user *buf, size_t size)
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
 	off_t offset;
-	switch (f->f_mode & O_ACCMODE) {
+	switch (f->f_mode & (O_ACCMODE | O_DIRECTORY)) {
 	case O_WRONLY: case O_RDWR:
 		offset = iwrite(f->f_inode, f->f_pos, buf, size);
 		f->f_pos += offset;
@@ -66,7 +71,7 @@ int sys_read(int fd, void __user *buf, size_t size)
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
 	off_t offset;
-	switch (f->f_mode & O_ACCMODE) {
+	switch (f->f_mode & (O_ACCMODE | O_DIRECTORY)) {
 	case O_RDONLY: case O_RDWR:
 		offset = iread(f->f_inode, f->f_pos, buf, size);
 		f->f_pos += offset;
@@ -80,6 +85,8 @@ off_t sys_lseek(int fd, off_t offset, int whence)
 {
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
+	if (f->f_mode & O_DIRECTORY)
+		return -1; /* EPERM */
 	switch (whence) {
 	case 0:
 		f->f_pos = offset;
@@ -92,6 +99,42 @@ off_t sys_lseek(int fd, off_t offset, int whence)
 		break;
 	}
 	return f->f_pos;
+}
+
+int sys_dirread(int fd, struct dirent __user *ent)
+{
+	FDCHK(fd);
+	struct file *f = &current->file[fd];
+	if (!(f->f_mode & O_DIRECTORY))
+		return -1; /* EPERM */
+	struct dir_entry de;
+	size_t offset = iread(f->f_inode, f->f_pos, &de, sizeof(de));
+	if (offset != sizeof(de))
+		return 0;
+	if (de.d_name_len + 1 >= sizeof(ent->d_name))
+		return -1; /* ENAMETOOLONG */
+	char *name = alloca(de.d_name_len + 1);
+	offset = iread(f->f_inode, f->f_pos + offset, name, de.d_name_len);
+	if (offset != de.d_name_len)
+		return 0;
+	name[offset] = 0;
+	ent->d_ino = de.d_ino;
+	ent->d_off = f->f_pos;
+	ent->d_type = de.d_type;
+	ent->d_reclen = sizeof(struct dirent) - sizeof(ent->d_name) + de.d_name_len;
+	strcpy(ent->d_name, name);
+	f->f_pos += de.d_entry_size;
+	return 1;
+}
+
+int sys_dirrewind(int fd)
+{
+	FDCHK(fd);
+	struct file *f = &current->file[fd];
+	if (f->f_mode & O_DIRECTORY)
+		return -1; /* EPERM */
+	f->f_pos = 0;
+	return 0;
 }
 
 int sys_dup2(int fd, int dirfd)

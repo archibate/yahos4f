@@ -13,6 +13,17 @@ static size_t tty_write(struct inode *ip, off_t pos, const void *buf,
 	return size;
 }
 
+static size_t hello_read(struct inode *ip, off_t pos, void *buf, size_t size)
+{
+	static const char hello[] = "Hello, World!\n";
+	if (pos > strlen(hello))
+		return 0;
+	if (pos + size > strlen(hello))
+		size = strlen(hello) - pos;
+	memcpy(buf, hello + pos, size);
+	return size;
+}
+
 static size_t tty_read(struct inode *ip, off_t pos, void *buf, size_t size)
 {
 	for (int i = 0; i < size; i++) {
@@ -50,6 +61,10 @@ struct char_drive drv_table[NR_DRV] = {
 	},
 	[ZERO_DRV] = {
 		.read = zero_read,
+		.write = null_write,
+	},
+	[HELLO_DRV] = {
+		.read = hello_read,
 		.write = null_write,
 	},
 };

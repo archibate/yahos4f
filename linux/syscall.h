@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sys/types.h>
+#include <sys/types.h>
 
 #ifndef __user
 #define __user
@@ -126,3 +127,6 @@ _syscall3(18, int, execve, const char __user *, char __user *const __user *,
 _syscall1(19, int, chdir, const char __user *);
 _syscall0(20, int, fork);
 _syscall1(21, int, wait, int __user *);
+struct dirent;
+_syscall2(22, int, dirread, int, struct dirent __user *);
+_syscall1(23, int, dirrewind, int);

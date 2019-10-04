@@ -14,6 +14,7 @@
 #define TTY_DRV 1
 #define ZERO_DRV 2
 #define NULL_DRV 3
+#define HELLO_DRV 4
 #define NR_DRV 16
 
 #define SUPER_MAGIC 0xef53

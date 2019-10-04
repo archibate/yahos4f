@@ -14,7 +14,7 @@ run-qemu-debug: kernel hda.img
 run-qemu-hd: hda.img
 	qemu-system-i386 -drive file=hda.img,index=0,media=disk,driver=raw
 
-hda.img: boot/boot Image bin/init bin/cat bin/env bin/sh
+hda.img: boot/boot Image bin/init bin/cat bin/env bin/sh bin/ls
 	sh tools/mkhda.sh
 
 boot/%: boot/%.asm

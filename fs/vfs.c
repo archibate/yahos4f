@@ -28,5 +28,6 @@ void init_fs(void)
 	fs_mknod("/dev/tty", S_IFCHR | 0644, TTY_DRV);
 	fs_mknod("/dev/zero", S_IFCHR | 0644, ZERO_DRV);
 	fs_mknod("/dev/null", S_IFCHR | 0644, NULL_DRV);
+	fs_mknod("/dev/hello", S_IFCHR | 0644, HELLO_DRV);
 	fs_mknod("/dev/hda", S_IFBLK | 0644, HDA_DEV);
 }
