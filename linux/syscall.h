@@ -130,3 +130,5 @@ _syscall1(21, int, wait, int __user *);
 struct dirent;
 _syscall2(22, int, dirread, int, struct dirent __user *);
 _syscall1(23, int, dirrewind, int);
+struct stat;
+_syscall4(24, int, fstatat, int, const char __user *, struct stat __user *, int);

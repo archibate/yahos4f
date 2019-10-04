@@ -101,6 +101,38 @@ off_t sys_lseek(int fd, off_t offset, int whence)
 	return f->f_pos;
 }
 
+void do_inode_stat(struct inode *ip, struct stat *st)
+{
+	memset(st, 0, sizeof(struct stat));
+	st->st_dev = ip->i_dev;
+	st->st_ino = ip->i_ino;
+	st->st_mode = ip->i_mode;
+	st->st_nlink = ip->i_nlinks;
+	st->st_uid = ip->i_uid;
+	st->st_gid = ip->i_gid;
+	st->st_rdev = (S_ISCHR(ip->i_mode) || S_ISBLK(ip->i_mode)) * ip->i_zone[0];
+	st->st_size = ip->i_size;
+	st->st_atime = ip->i_atime;
+	st->st_mtime = ip->i_mtime;
+	st->st_ctime = ip->i_ctime;
+}
+
+int sys_fstatat(int fd, const char __user *path, struct stat __user *st, int flags)
+{
+	struct inode *old_cwd = current->cwd;
+	if (fd != AT_FDCWD) {
+		FDCHK(fd);
+		struct file *f = &current->file[fd];
+		if (!(f->f_mode & O_DIRECTORY))
+			return -1; /* EPERM */
+		current->cwd = f->f_inode;
+	}
+	struct inode *ip = namei(path);
+	current->cwd = old_cwd;
+	if (!ip) return -1;
+	do_inode_stat(ip, st);
+}
+
 int sys_dirread(int fd, struct dirent __user *ent)
 {
 	FDCHK(fd);
