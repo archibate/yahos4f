@@ -42,6 +42,7 @@ static void split_block(H *b, size_t size)
 {
 	H *c = (void*)(b + 1) + size;
 	c->size = b->size - (size + sizeof(H));
+	b->size = size;
 	c->next = b->next;
 	if (b->next)
 		b->next->prev = c;
@@ -53,12 +54,10 @@ static void split_block(H *b, size_t size)
 void merge_block(H *b)
 {
 	if (b->next && !b->next->ptr) {
-		if (b == (void*)0x2224b8) printk("?%p+%p %p+%p", b, b->size, b->next, b->next->size);
 		b->size += sizeof(H) + b->next->size;
 		b->next = b->next->next;
 		if (b->next)
 			b->next->prev = b;
-		if (b == (void*)0x2224b8) printk("@%p+%p %p+%p", b, b->size, b->next, b->next->size);
 	}
 }
 
@@ -79,14 +78,15 @@ static void *_malloc(size_t size)
 	} else {
 		H *prev;
 		b = search_block(&prev, size);
-		if (b == (void*)0x2224b8) printk("!%p+%p", b, b->size);
 		if (!b) {
 			b = extend_heap(prev, size);
 			if (!b)
 				return NULL;
 		} else if (b->size >= size + sizeof(H) + 8) {
-			if (b <= b->next && (void*)(b + 1) + b->size > (void*)b->next)
-				panic("%p+%p %p+%p", b, b->size, b->next, b->next->size);
+			/*if (b <= b->next && (void*)(b + 1) + b->size
+			 > (void*)b->next)
+				panic("%p+%p %p+%p", b, b->size,
+				b->next, b->next->size);*/
 			split_block(b, size);
 			merge_block(b->next);
 		}
