@@ -1,4 +1,8 @@
 cd /
 cat etc/issue
 cd root
+ls /
+ls ..
+ls /dev
+ls /etc
 sh
