@@ -125,4 +125,4 @@ _syscall3(18, int, execve, const char __user *, char __user *const __user *,
 		char __user *const __user *);
 _syscall1(19, int, chdir, const char __user *);
 _syscall0(20, int, fork);
-_syscall0(21, int, wait);
+_syscall1(21, int, wait, int __user *);

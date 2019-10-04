@@ -37,6 +37,7 @@ int sys_open(const char __user *path, int mode)
 
 	struct inode *ip = namei(path);
 	if (!ip) return -1;
+	if (S_ISDIR(ip->i_mode)) return -1; /* EISDIR */
 
 	f->f_mode = mode;
 	f->f_inode = ip;
@@ -103,6 +104,7 @@ int sys_dup2(int fd, int dirfd)
 	struct file *g = &current->file[dirfd];
 	struct file *f = &current->file[fd];
 	memcpy(g, f, sizeof(struct file));
+	f->f_inode = idup(g->f_inode);
 	return 0;
 }
 
@@ -114,6 +116,7 @@ int sys_dup(int fd)
 	struct file *g = &current->file[i];
 	struct file *f = &current->file[fd];
 	memcpy(g, f, sizeof(struct file));
+	f->f_inode = idup(g->f_inode);
 	return i;
 }
 

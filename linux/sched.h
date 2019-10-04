@@ -25,6 +25,10 @@ struct task {
 	unsigned long brk;
 	unsigned long stop;
 	struct file *file;
+	union {
+		int exit_stat;
+		struct task *active_child;
+	};
 };
 
 #define INITIAL_TASK	{ \
@@ -40,6 +44,7 @@ extern struct task *current;
 void init_sched(void);
 void schedule(void);
 int sys_pause(void);
+int sched_wait(int *stat_loc);
 void sleep_on(struct task **p);
 void intrib_sleep_on(struct task **p);
 void wake_up(struct task **p);
@@ -50,6 +55,7 @@ struct task *new_task(struct task *parent);
 struct task *setup_kernel_task(struct task *p, void *start, void *arg);
 void __attribute__((noreturn)) sys_exit(int status);
 /***** API PROBE BEGIN *****/
+void destroy_task(struct task *p);
 void destroy_user_task(struct task *p);
 void free_task(struct task *p);
 int get_pid_index(int pid);

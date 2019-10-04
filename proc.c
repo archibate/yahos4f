@@ -45,17 +45,6 @@ struct task *new_task(struct task *parent)
 	return p;
 }
 
-void __attribute__((noreturn)) sys_exit(int status)
-{
-	int i = get_pid_index(current->pid);
-	if (i == -1) panic("cannot get current pid index");
-	free_task(current);
-	free(current);
-	task[i] = current = NULL;
-	schedule();
-	panic("sys_exit() schedule returned");
-}
-
 static void __attribute__((noreturn)) __sys_exit(void)
 {
 	register int ret asm ("eax");
@@ -92,4 +81,13 @@ void free_task(struct task *p)
 	free(p->file);
 	p->file = NULL;
 	if (current->cwd) iput(current->cwd);
+}
+
+void destroy_task(struct task *p)
+{
+	int i = get_pid_index(p->pid);
+	if (i == -1) panic("cannot get pid index");
+	free_task(p);
+	free(p);
+	task[i] = NULL;
 }

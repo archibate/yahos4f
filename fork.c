@@ -9,6 +9,9 @@ static struct file *fork_file_table(struct file *old_ft)
 {
 	struct file *new_ft = calloc(NR_OPEN, sizeof(struct file));
 	memcpy(new_ft, old_ft, NR_OPEN * sizeof(struct file));
+	for (int i = 0; i < NR_OPEN; i++) {
+		new_ft[i].f_inode = idup(old_ft[i].f_inode);
+	}
 	return new_ft;
 }
 

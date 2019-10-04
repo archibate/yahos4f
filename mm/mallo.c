@@ -120,7 +120,8 @@ void free(void *p)
 	H *b = get_block(p);
 	if (!(first_block && (H *)p >= first_block + 1
 				&& p < sbrk(0) && p == b->ptr))
-		panic("bad free %p", p);
+		panic("bad free %p (%p)", p, b->ptr);
+	//return; // TODO: bug may in merge_block
 
 	b->ptr = NULL;
 	if (b->prev && !b->prev->ptr) {

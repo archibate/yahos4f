@@ -55,7 +55,8 @@ int execvp(const char *path, char *const *argv)
 	} \
 	argv[i] = NULL;
 
-#define EXECL_EXIT()
+#define EXECL_EXIT() \
+	va_end(ap);
 
 int execle(const char *path, const char *arg, ...)
 {

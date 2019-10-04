@@ -27,6 +27,8 @@ struct inode *namep(const char **ppath)
 	struct inode *dip, *pip;
 	if (!(dip = path_name(ppath)))
 		return NULL;
+	if (!**ppath)
+		return dip;
 	pip = dir_getp(dip, ppath);
 	iput(dip);
 	return pip;
@@ -37,6 +39,8 @@ struct inode *namei(const char *path)
 	struct inode *dip, *ip;
 	if (!(dip = path_name(&path)))
 		return NULL;
+	if (!*path)
+		return dip;
 	ip = dir_geti(dip, path);
 	iput(dip);
 	return ip;

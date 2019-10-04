@@ -63,10 +63,28 @@ static int sys_chdir(const char __user *path)
 {
 	struct inode *ip = namei(path);
 	if (!ip) return -1;
+	if (!S_ISDIR(ip->i_mode)) return -1; /* ENOTDIR */
 	if (current->cwd)
 		iput(current->cwd);
 	current->cwd = ip;
 	return 0;
+}
+
+#if 0
+static char __user *sys_getcwd(char __user *path, size_t size)
+{
+	if (!current->cwd_string)
+		return NULL;
+	size_t real_size = strlen(current->cwd_string) + 1;
+	if (real_size > size)
+		return NULL; /* ERANGE */
+	memcpy(path, current->cwd_string, real_size);
+}
+#endif
+
+static int sys_wait(int __user *stat_loc)
+{
+	return sched_wait(stat_loc);
 }
 
 void on_syscall(PUSHAD_ARGS)

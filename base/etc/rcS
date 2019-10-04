@@ -1,2 +1,4 @@
-cat /etc/issue
+cd /
+cat etc/issue
+cd root
 sh
