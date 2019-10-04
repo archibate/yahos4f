@@ -37,8 +37,4 @@ define u
 	x/10i $pc
 end
 
-bcc *0x1000018
-bc *0x1000033
-bc do_vm_region_fault
-bc vmm.c:157
-bc vmm.c:129
+bc idt.c:37

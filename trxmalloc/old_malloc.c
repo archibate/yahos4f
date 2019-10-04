@@ -79,7 +79,7 @@ static void *_malloc(size_t size)
 	return b->ptr;
 }
 
-void *malloc(size_t size)
+void *old_malloc(size_t size)
 {
 	char *p = _malloc(size);
 	if (!p)
@@ -89,7 +89,7 @@ void *malloc(size_t size)
 	return p;
 }
 
-void *calloc(size_t nmemb, size_t size)
+void *old_calloc(size_t nmemb, size_t size)
 {
 	size *= nmemb;
 	char *p = _malloc(size);
@@ -115,7 +115,7 @@ void merge_block(H *b)
 	}
 }
 
-void free(void *p)
+void old_free(void *p)
 {
 	H *b = get_block(p);
 	if (!(first_block && (H *)p >= first_block + 1
