@@ -131,6 +131,8 @@ int sys_fstatat(int fd, const char __user *path, struct stat __user *st, int fla
 	current->cwd = old_cwd;
 	if (!ip) return -1;
 	do_inode_stat(ip, st);
+	iput(ip);
+	return 0;
 }
 
 int sys_dirread(int fd, struct dirent __user *ent)

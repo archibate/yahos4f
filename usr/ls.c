@@ -3,21 +3,42 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
 
 extern int dirread(int dd, struct dirent *de);
+
+void lsfile(int dd, const char *parent, const char *name)
+{
+	char buf[23];
+	struct stat st;
+	if (fstatat(dd, name, &st, 0) == -1) {
+		if (parent) {
+			write(2, parent, strlen(parent));
+			write(2, "/", 1);
+		}
+		write(2, name, strlen(name));
+		write(2, ": stat error\n", 13);
+		return;
+	}
+	sprintf(buf, "%5d ", st.st_ino);
+	write(2, buf, strlen(buf));
+	write(2, name, strlen(name));
+	if (S_ISDIR(st.st_mode))
+		write(2, "/", 1);
+	write(2, "\n", 1);
+}
 
 void ls(const char *path)
 {
 	int dd = open(path, O_RDONLY | O_DIRECTORY);
 	if (dd == -1) {
-		write(2, path, strlen(path));
-		write(2, ": open error\n", 13);
+		lsfile(AT_FDCWD, NULL, path);
 		return;
 	}
 	struct dirent de;
 	while (dirread(dd, &de) == 1) {
-		write(2, de.d_name, strlen(de.d_name));
-		write(2, "\n", 1);
+		lsfile(dd, path, de.d_name);
 	}
 	close(dd);
 }
