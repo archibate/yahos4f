@@ -1,10 +1,10 @@
 #include <linux/kernel.h>
 #include <linux/segment.h>
-#include <linux/mman.h>
 #include <linux/vmm.h>
 #include <linux/pmm.h>
 #include <linux/mmu.h>
 #include <linux/fs.h>
+#include <malloc.h>
 #include <string.h>
 
 static int map_page(struct mm *mm, void __user *p,

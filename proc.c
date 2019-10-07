@@ -1,9 +1,9 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
-#include <linux/mman.h>
 #include <linux/eflags.h>
 #include <linux/vmm.h>
 #include <linux/fs.h>
+#include <malloc.h>
 #include <stddef.h>
 
 static int last_pid = 1;

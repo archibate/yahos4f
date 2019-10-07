@@ -8,7 +8,7 @@
 #include <string.h>
 #include <elf.h>
 
-#define USER_STACK_SIZE 8192
+#define USER_STACK_SIZE (8192*1024)
 
 static int is_vaild_elf_header(Elf32_Ehdr *e)
 {

@@ -2,7 +2,7 @@
 #include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/vmm.h>
-#include <linux/mman.h>
+#include <malloc.h>
 #include <string.h>
 
 static struct file *fork_file_table(struct file *old_ft)

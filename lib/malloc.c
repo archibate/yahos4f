@@ -1,13 +1,11 @@
+#include <stddef.h>
+#include <unistd.h>
+#include <malloc.h>
 #ifdef _KERNEL
 #include <linux/kernel.h>
-#include <linux/mman.h>
 #else
-#include <unistd.h>
+#define panic(...) write(2, "malloc error\n", 13)
 #endif
-
-typedef unsigned long size_t;
-
-#define NULL ((void*)0)
 
 typedef struct header
 {
@@ -99,7 +97,7 @@ static void *_malloc(size_t size)
 	return b->ptr;
 }
 
-void *old_malloc(size_t size)
+void *malloc(size_t size)
 {
 	char *p = _malloc(size);
 	if (!p)
@@ -109,7 +107,7 @@ void *old_malloc(size_t size)
 	return p;
 }
 
-void *old_calloc(size_t nmemb, size_t size)
+void *calloc(size_t nmemb, size_t size)
 {
 	size *= nmemb;
 	char *p = _malloc(size);
@@ -125,13 +123,12 @@ static H *get_block(void *p)
 	return p - sizeof(H);
 }
 
-void old_free(void *p)
+void free(void *p)
 {
 	H *b = get_block(p);
 	if (!(first_block && (H *)p >= first_block + 1
 				&& p < sbrk(0) && p == b->ptr))
 		panic("bad free %p (%p)", p, b->ptr);
-	//return; // TODO: bug may in merge_block
 
 	b->ptr = NULL;
 	if (b->prev && !b->prev->ptr) {

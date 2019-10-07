@@ -144,7 +144,7 @@ struct inode {
 };
 
 struct file {
-	unsigned int f_mode;
+	unsigned int f_oflags;
 	struct inode *f_inode;
 	off_t f_pos;
 };

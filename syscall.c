@@ -3,6 +3,7 @@
 #include <linux/pushad.h>
 #include <linux/sched.h>
 #include <linux/fs.h>
+#include <linux/vmm.h>
 #include <string.h>
 #include <alloca.h>
 
@@ -85,6 +86,18 @@ static char __user *sys_getcwd(char __user *path, size_t size)
 static int sys_wait(int __user *stat_loc)
 {
 	return sched_wait(stat_loc);
+}
+
+static void __user *sys_sbrk(int incr)
+{
+	void __user *ret = (void *)current->brk;
+	current->brk += incr;
+	return ret;
+}
+
+static int sys_brk(void __user *addr)
+{
+	return -(sys_sbrk(addr - (void *)current->brk) == (void *)-1);
 }
 
 void on_syscall(PUSHAD_ARGS)

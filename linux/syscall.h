@@ -18,23 +18,23 @@
 	case (i): sys_##name((t1) ebx); break;
 #define _syscall0(i, rt, name) \
 	_SYSCALL rt sys_##name(void); \
-	case (i): *&eax = sys_##name(); break;
+	case (i): *&eax = (long)sys_##name(); break;
 #define _syscall1(i, rt, name, t1) \
 	_SYSCALL rt sys_##name(t1); \
-	case (i): *&eax = sys_##name((t1) ebx); break;
+	case (i): *&eax = (long)sys_##name((t1) ebx); break;
 #define _syscall2(i, rt, name, t1, t2) \
 	_SYSCALL rt sys_##name(t1, t2); \
-	case (i): *&eax = sys_##name((t1) ebx, (t2) ecx); break;
+	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx); break;
 #define _syscall3(i, rt, name, t1, t2, t3) \
 	_SYSCALL rt sys_##name(t1, t2, t3); \
-	case (i): *&eax = sys_##name((t1) ebx, (t2) ecx, (t3) edx); break;
+	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx, (t3) edx); break;
 #define _syscall4(i, rt, name, t1, t2, t3, t4) \
 	_SYSCALL rt sys_##name(t1, t2, t3, t4); \
-	case (i): *&eax = sys_##name((t1) ebx, (t2) ecx, (t3) edx, \
+	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx, (t3) edx, \
 				  (t4) esi); break;
 #define _syscall5(i, rt, name, t1, t2, t3, t4, t5) \
 	_SYSCALL rt sys_##name(t1, t2, t3, t4, t5); \
-	case (i): *&eax = sys_##name((t1) ebx, (t2) ecx, (t3) edx, \
+	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx, (t3) edx, \
 				  (t4) esi, (t5) edi); break;
 
 #else
@@ -115,7 +115,7 @@ _syscall2(7, int, mkdir, const char __user *, unsigned int);
 _syscall2(8, int, link, const char __user *, const char __user *);
 _syscall1(9, int, unlink, const char __user *);
 _syscall3(10, int, mknod, const char __user *, unsigned int, unsigned int);
-_syscall2(11, int, open, const char __user *, int);
+_syscall3(11, int, open, const char __user *, int, int);
 _syscall3(12, int, write, int, const void __user *, size_t);
 _syscall3(13, int, read, int, void __user *, size_t);
 _syscall3(14, off_t, lseek, int, off_t, int);
@@ -132,3 +132,5 @@ _syscall2(22, int, dirread, int, struct dirent __user *);
 _syscall1(23, int, dirrewind, int);
 struct stat;
 _syscall4(24, int, fstatat, int, const char __user *, struct stat __user *, int);
+_syscall1(25, int, brk, void __user *);
+_syscall1(26, void __user *, sbrk, int);

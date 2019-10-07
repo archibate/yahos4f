@@ -12,7 +12,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#ifdef _KERNEL_TRX
+#ifdef _KERNEL
 #include <linux/conio.h>
 #include <linux/kernel.h>
 #include <trxmalloc/old_malloc.h>
@@ -90,7 +90,7 @@
 
 #undef debug
 #ifdef DEBUG
-#ifndef _KERNEL_TRX
+#ifndef _KERNEL
 #define debug(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define debug(...) cprintf(__VA_ARGS__)
@@ -100,7 +100,7 @@
 #endif
 
 #undef error
-#ifndef _KERNEL_TRX
+#ifndef _KERNEL
 #define error(m)                       \
   do {                                 \
     fprintf(stderr, "error: %s\n", m); \
@@ -204,9 +204,11 @@ struct malloc_state arena;
 /* Malloc hooks are function pointers that can replace malloc/realloc/free
    when they are != NULL (and this is pornograhic for an attacker ;) )*/
 
+#ifndef _KERNEL
 void *(*__trx_malloc_hook)(size_t);
 void *(*__trx_realloc_hook)(void*, size_t);
 void (*__trx_free_hook)(void*);
+#endif
 
 /* Utility function to serve mmapped chunks */
 
@@ -214,7 +216,7 @@ static void* _trx_mmap_chunk(size_t size) {
 
   size_t sz = request2size(size) + SIZE_SZ;
 
-#ifndef _KERNEL_TRX
+#ifndef _KERNEL
   struct malloc_chunk *victim =
       mmap(0, sz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
   if (victim == (struct malloc_chunk*)MAP_FAILED)
@@ -237,7 +239,7 @@ void* trx_malloc(size_t size) {
 
   debug("malloc(%lu)", size);
   
-#ifndef _KERNEL_TRX
+#ifndef _KERNEL
   if (__trx_malloc_hook)
     return __trx_malloc_hook(size);
 #endif
@@ -387,7 +389,7 @@ void trx_free(void* ptr) {
 
   debug("free(%p)\n", ptr);
  
-#ifndef _KERNEL_TRX
+#ifndef _KERNEL
   if (__trx_free_hook) {
     __trx_free_hook(ptr);
     return;
@@ -404,7 +406,7 @@ void trx_free(void* ptr) {
 
   if (is_mmapped(ck)) {
 
-#ifndef _KERNEL_TRX
+#ifndef _KERNEL
     munmap(ck, sz);
 #else
     old_free(ck);
@@ -539,7 +541,7 @@ size_t trx_malloc_usable_size(void* ptr) {
 
 void* trx_realloc(void* ptr, size_t size) {
 
-#ifndef _KERNEL_TRX
+#ifndef _KERNEL
   if (__trx_realloc_hook)
     return __trx_realloc_hook(ptr, size);
 #endif

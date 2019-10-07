@@ -7,7 +7,7 @@
 #include <alloca.h>
 #include <fcntl.h>
 
-int sys_open(const char __user *path, int mode);
+int sys_open(const char __user *path, int oflags, int mode);
 int sys_write(int fd, const void __user *buf, size_t size);
 int sys_read(int fd, void __user *buf, size_t size);
 off_t sys_lseek(int fd, off_t offset, int whence);
@@ -33,20 +33,32 @@ static int alloc_empty_slot(void)
 	return -1;
 }
 
-int sys_open(const char __user *path, int mode)
+int sys_open(const char __user *path, int oflags, int mode)
 {
 	int i = alloc_empty_slot();
 	if (i == -1) return -1; /* EMFILE */
 	struct file *f = &current->file[i];
 
 	struct inode *ip = namei(path);
-	if (!ip) return -1;
-	if (S_ISDIR(ip->i_mode) && !(mode & O_DIRECTORY)) return -1; /* EISDIR */
-	if (!S_ISDIR(ip->i_mode) && (mode & O_DIRECTORY)) return -1; /* ENOTDIR */
+	if (ip && (oflags & O_EXCL))
+		return -1; /* EEXIST */
+	if (!ip) {
+		if (!(oflags & O_CREAT))
+			return -1;
+		ip = creati(path, mode);
+		if (!ip)
+			return -1;
+	}
+	if (S_ISDIR(ip->i_mode) && !(oflags & O_DIRECTORY)) return -1; /* EISDIR */
+	if (!S_ISDIR(ip->i_mode) && (oflags & O_DIRECTORY)) return -1; /* ENOTDIR */
+	if (oflags & O_TRUNC) {
+		ip->i_size = 0;
+		iupdate(ip);
+	}
 
-	f->f_mode = mode;
+	f->f_oflags = oflags;
 	f->f_inode = ip;
-	f->f_pos = 0;
+	f->f_pos = (oflags & O_APPEND) ? ip->i_size : 0;
 
 	return i;
 }
@@ -56,7 +68,7 @@ int sys_write(int fd, const void __user *buf, size_t size)
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
 	off_t offset;
-	switch (f->f_mode & (O_ACCMODE | O_DIRECTORY)) {
+	switch (f->f_oflags & (O_ACCMODE | O_DIRECTORY)) {
 	case O_WRONLY: case O_RDWR:
 		offset = iwrite(f->f_inode, f->f_pos, buf, size);
 		f->f_pos += offset;
@@ -71,7 +83,7 @@ int sys_read(int fd, void __user *buf, size_t size)
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
 	off_t offset;
-	switch (f->f_mode & (O_ACCMODE | O_DIRECTORY)) {
+	switch (f->f_oflags & (O_ACCMODE | O_DIRECTORY)) {
 	case O_RDONLY: case O_RDWR:
 		offset = iread(f->f_inode, f->f_pos, buf, size);
 		f->f_pos += offset;
@@ -85,7 +97,7 @@ off_t sys_lseek(int fd, off_t offset, int whence)
 {
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
-	if (f->f_mode & O_DIRECTORY)
+	if (f->f_oflags & O_DIRECTORY)
 		return -1; /* EPERM */
 	switch (whence) {
 	case 0:
@@ -123,7 +135,7 @@ int sys_fstatat(int fd, const char __user *path, struct stat __user *st, int fla
 	if (fd != AT_FDCWD) {
 		FDCHK(fd);
 		struct file *f = &current->file[fd];
-		if (!(f->f_mode & O_DIRECTORY))
+		if (!(f->f_oflags & O_DIRECTORY))
 			return -1; /* EPERM */
 		current->cwd = f->f_inode;
 	}
@@ -139,7 +151,7 @@ int sys_dirread(int fd, struct dirent __user *ent)
 {
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
-	if (!(f->f_mode & O_DIRECTORY))
+	if (!(f->f_oflags & O_DIRECTORY))
 		return -1; /* EPERM */
 	struct dir_entry de;
 	size_t offset = iread(f->f_inode, f->f_pos, &de, sizeof(de));
@@ -165,7 +177,7 @@ int sys_dirrewind(int fd)
 {
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
-	if (f->f_mode & O_DIRECTORY)
+	if (f->f_oflags & O_DIRECTORY)
 		return -1; /* EPERM */
 	f->f_pos = 0;
 	return 0;
