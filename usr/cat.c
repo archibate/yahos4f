@@ -1,26 +1,20 @@
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <stdio.h>
 #include <string.h>
 
 void cat(const char *path)
 {
-	int fd = path ? open(path, O_RDONLY) : 0;
-	if (fd == -1) {
-		write(2, path, strlen(path));
-		write(2, ": open error\n", 13);
+	FILE *fp = path ? fopen(path, "r") : stdin;
+	if (!fp) {
+		perror(path);
 		return;
 	}
 
-	while (1) {
 		char buf[256];
-		int size = read(fd, buf, sizeof(buf) - 1);
-		if (size <= 0)
-			break;
-		write(1, buf, size);
+	while (fgets(buf, sizeof(buf), fp)) {
+		fputs(buf, stdout);
 	}
 
-	if (fd) close(fd);
+	if (fp != stdin) fclose(fp);
 }
 
 int main(int argc, char **argv)

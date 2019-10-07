@@ -1,6 +1,7 @@
 #include <linux/kernel.h>
 #include <linux/fs.h>
 #include <string.h>
+#include <errno.h>
 #include <alloca.h>
 
 struct inode *dir_getp(struct inode *dip, const char **ppath)
@@ -20,8 +21,10 @@ struct inode *dir_getp(struct inode *dip, const char **ppath)
 		for (; *p == '/'; p++);
 		path = p;
 
-		if (0 > dir_find(dip, &de, name, 0))
+		if (0 > dir_find(dip, &de, name, 0)) {
+			errno = ENOENT;
 			goto bad;
+		}
 		int dev = dip->i_dev;
 		iput(dip);
 		dip = iget(dev, de.d_ino);
@@ -31,8 +34,10 @@ struct inode *dir_getp(struct inode *dip, const char **ppath)
 		}
 	}
 
-	if (!S_ISDIR(dip->i_mode))
-		goto bad; /* ENOTDIR */
+	if (!S_ISDIR(dip->i_mode)) {
+		errno = ENOTDIR;
+		goto bad;
+	}
 
 	*ppath = path;
 	return dip;
@@ -48,8 +53,10 @@ struct inode *dir_geti(struct inode *dip, const char *path)
 	struct inode *ip, *pip = dir_getp(dip, &path);
 	if (!pip) return NULL;
 
-	if (0 > dir_find(pip, &de, path, 0))
+	if (0 > dir_find(pip, &de, path, 0)) {
+		errno = ENOENT;
 		goto bad;
+	}
 
 	int dev = pip->i_dev;
 	iput(pip);

@@ -6,6 +6,7 @@
 #include <linux/vmm.h>
 #include <string.h>
 #include <alloca.h>
+#include <errno.h>
 
 static int sys_debug(const char __user *msg)
 {
@@ -64,7 +65,10 @@ static int sys_chdir(const char __user *path)
 {
 	struct inode *ip = namei(path);
 	if (!ip) return -1;
-	if (!S_ISDIR(ip->i_mode)) return -1; /* ENOTDIR */
+	if (!S_ISDIR(ip->i_mode)) {
+		errno = ENOTDIR;
+		return -1;
+	}
 	if (current->cwd)
 		iput(current->cwd);
 	current->cwd = ip;
@@ -102,10 +106,6 @@ static int sys_brk(void __user *addr)
 
 void on_syscall(PUSHAD_ARGS)
 {
-	switch (eax) {
 #define _SYSCALL_KERNEL_DEFINATION
 #include <linux/syscall.h>
-	default:
-		warning("undefined syscall %d (%#x)", eax); /* ENOSYS */
-	}
 }

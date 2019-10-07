@@ -2,6 +2,7 @@
 #include <linux/sched.h>
 #include <linux/fs.h>
 #include <string.h>
+#include <errno.h>
 
 static struct inode *path_name(const char **pp)
 {
@@ -15,6 +16,7 @@ static struct inode *path_name(const char **pp)
 		dip = idup(current->cwd);
 		if (!dip) {
 			warning("current->cwd == NULL");
+			errno = ENOENT;
 			return NULL;
 		}
 	}

@@ -4,11 +4,11 @@
 #include <alloca.h>
 #include <stdarg.h>
 
-extern char **__envp;
+extern char **environ;
 
 int execv(const char *path, char *const *argv)
 {
-	return execve(path, argv, __envp);
+	return execve(path, argv, environ);
 }
 
 int execvpe(const char *file, char *const *argv, char *const *envp)
@@ -18,7 +18,9 @@ int execvpe(const char *file, char *const *argv, char *const *envp)
 		if (file[i] == '/')
 			return execv(file, argv);
 	const char *prefix = getenv("PATH");
-	if (!*prefix) return -1;
+	if (!*prefix) {
+		return execve(file, argv, envp);
+	}
 	do {
 		for (i = 0; prefix[i] && prefix[i] != ':'; i++);
 		char *path = alloca(i + 1 + strlen(file));
@@ -33,14 +35,14 @@ int execvpe(const char *file, char *const *argv, char *const *envp)
 
 int execvp(const char *path, char *const *argv)
 {
-	return execvpe(path, argv, __envp);
+	return execvpe(path, argv, environ);
 }
 
-#define EXECL_GETER(argv0) \
+#define EXECL_GETER() \
 	va_list ap, pa; \
 	va_start(ap, arg); \
 	va_start(pa, arg); \
-	int argv_size = 2, i = 1; \
+	int argv_size = 1, i = 0; \
 	const char *gra = arg; \
 	while (gra) { \
 		argv_size++; \
@@ -48,7 +50,6 @@ int execvp(const char *path, char *const *argv)
 	} \
 	va_end(pa); \
 	char **argv = alloca(argv_size * sizeof(char *)); \
-	argv[0] = (char *)(argv0); \
 	while (arg) { \
 		argv[i++] = (char *)arg; \
 		arg = va_arg(ap, const char *); \
@@ -60,7 +61,7 @@ int execvp(const char *path, char *const *argv)
 
 int execle(const char *path, const char *arg, ...)
 {
-	EXECL_GETER(path);
+	EXECL_GETER();
 	char *const *envp = va_arg(ap, char *const *);
 	int ret = execve(path, argv, envp);
 	EXECL_EXIT();
@@ -69,7 +70,7 @@ int execle(const char *path, const char *arg, ...)
 
 int execl(const char *path, const char *arg, ...)
 {
-	EXECL_GETER(path);
+	EXECL_GETER();
 	int ret = execv(path, argv);
 	EXECL_EXIT();
 	return ret;
@@ -77,7 +78,7 @@ int execl(const char *path, const char *arg, ...)
 
 int execlp(const char *file, const char *arg, ...)
 {
-	EXECL_GETER(file);
+	EXECL_GETER();
 	int ret = execvp(file, argv);
 	EXECL_EXIT();
 	return ret;

@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	write(2, "init started\n", 13);
 	int pid = fork();
 	if (pid == 0) {
-		execlp("sh", "/etc/rcS", NULL);
+		execl("/bin/sh", "sh", "/etc/rcS", NULL);
 		write(2, "exec error\n", 11);
 		return -1;
 	} else if (pid < 0) {
@@ -24,5 +24,5 @@ int main(int argc, char **argv)
 	while (wait(&stat) != pid);
 
 	write(2, "init exiting...\n", 16);
-	return 0;
+	return stat;
 }

@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <alloca.h>
+#include <errno.h>
 #include <fcntl.h>
 
 int sys_open(const char __user *path, int oflags, int mode);
@@ -18,11 +19,15 @@ int sys_dup(int fd);
 int sys_close(int fd);
 
 #define FDCHK(fd) \
-	if (!(0 <= (fd) && (fd) < NR_OPEN && current->file[(fd)].f_inode)) \
-		return -1; /* EBADF */
+	if (!(0 <= (fd) && (fd) < NR_OPEN && current->file[(fd)].f_inode)) { \
+		errno = EBADF; \
+		return -1; \
+	}
 #define FDCHK2(fd) \
-	if (!(0 <= (fd) && (fd) < NR_OPEN)) \
-		return -1; /* EBADF */
+	if (!(0 <= (fd) && (fd) < NR_OPEN)) { \
+		errno = EBADF; \
+		return -1; \
+	}
 
 static int alloc_empty_slot(void)
 {
@@ -36,21 +41,32 @@ static int alloc_empty_slot(void)
 int sys_open(const char __user *path, int oflags, int mode)
 {
 	int i = alloc_empty_slot();
-	if (i == -1) return -1; /* EMFILE */
+	if (i == -1) {
+		errno = EMFILE;
+		return -1;
+	}
 	struct file *f = &current->file[i];
 
 	struct inode *ip = namei(path);
-	if (ip && (oflags & O_EXCL))
-		return -1; /* EEXIST */
 	if (!ip) {
 		if (!(oflags & O_CREAT))
 			return -1;
 		ip = creati(path, mode);
 		if (!ip)
 			return -1;
+
+	} else if (oflags & O_EXCL) {
+		errno = EEXIST;
+		return -1;
 	}
-	if (S_ISDIR(ip->i_mode) && !(oflags & O_DIRECTORY)) return -1; /* EISDIR */
-	if (!S_ISDIR(ip->i_mode) && (oflags & O_DIRECTORY)) return -1; /* ENOTDIR */
+	if (S_ISDIR(ip->i_mode) && !(oflags & O_DIRECTORY)) {
+		errno = EISDIR;
+		return -1;
+	}
+	if (!S_ISDIR(ip->i_mode) && (oflags & O_DIRECTORY)) {
+		errno = ENOTDIR;
+		return -1;
+	}
 	if (oflags & O_TRUNC) {
 		ip->i_size = 0;
 		iupdate(ip);
@@ -74,7 +90,8 @@ int sys_write(int fd, const void __user *buf, size_t size)
 		f->f_pos += offset;
 		return offset;
 	default:
-		return -1; /* EPERM */
+		errno = EPERM;
+		return -1;
 	}
 }
 
@@ -89,7 +106,8 @@ int sys_read(int fd, void __user *buf, size_t size)
 		f->f_pos += offset;
 		return offset;
 	default:
-		return -1; /* EPERM */
+		errno = EPERM;
+		return -1;
 	}
 }
 
@@ -97,8 +115,10 @@ off_t sys_lseek(int fd, off_t offset, int whence)
 {
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
-	if (f->f_oflags & O_DIRECTORY)
-		return -1; /* EPERM */
+	if (f->f_oflags & O_DIRECTORY) {
+		errno = EPERM;
+		return -1;
+	}
 	switch (whence) {
 	case 0:
 		f->f_pos = offset;
@@ -135,8 +155,10 @@ int sys_fstatat(int fd, const char __user *path, struct stat __user *st, int fla
 	if (fd != AT_FDCWD) {
 		FDCHK(fd);
 		struct file *f = &current->file[fd];
-		if (!(f->f_oflags & O_DIRECTORY))
-			return -1; /* EPERM */
+		if (!(f->f_oflags & O_DIRECTORY)) {
+			errno = EPERM;
+			return -1;
+		}
 		current->cwd = f->f_inode;
 	}
 	struct inode *ip = namei(path);
@@ -151,14 +173,18 @@ int sys_dirread(int fd, struct dirent __user *ent)
 {
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
-	if (!(f->f_oflags & O_DIRECTORY))
-		return -1; /* EPERM */
+	if (!(f->f_oflags & O_DIRECTORY)) {
+		errno = EPERM;
+		return -1;
+	}
 	struct dir_entry de;
 	size_t offset = iread(f->f_inode, f->f_pos, &de, sizeof(de));
 	if (offset != sizeof(de))
 		return 0;
-	if (de.d_name_len + 1 >= sizeof(ent->d_name))
-		return -1; /* ENAMETOOLONG */
+	if (de.d_name_len + 1 >= sizeof(ent->d_name)) {
+		errno = ENAMETOOLONG;
+		return -1;
+	}
 	char *name = alloca(de.d_name_len + 1);
 	offset = iread(f->f_inode, f->f_pos + offset, name, de.d_name_len);
 	if (offset != de.d_name_len)
@@ -177,8 +203,10 @@ int sys_dirrewind(int fd)
 {
 	FDCHK(fd);
 	struct file *f = &current->file[fd];
-	if (f->f_oflags & O_DIRECTORY)
-		return -1; /* EPERM */
+	if (!(f->f_oflags & O_DIRECTORY)) {
+		errno = EPERM;
+		return -1;
+	}
 	f->f_pos = 0;
 	return 0;
 }
@@ -201,7 +229,10 @@ int sys_dup(int fd)
 {
 	FDCHK(fd);
 	int i = alloc_empty_slot();
-	if (i == -1) return -1; /* EMFILE */
+	if (i == -1) {
+		errno = EMFILE;
+		return -1;
+	}
 	struct file *g = &current->file[i];
 	struct file *f = &current->file[fd];
 	memcpy(g, f, sizeof(struct file));

@@ -5,6 +5,8 @@
 #include <malloc.h>
 #include <limits.h>
 
+extern int xvasprintf(char * buf, const char * fmt, va_list args);
+
 int vasprintf(char ** buf, const char * fmt, va_list args) {
 	char * b = malloc(1024);
 	*buf = b;

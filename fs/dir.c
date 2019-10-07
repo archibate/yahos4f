@@ -2,6 +2,7 @@
 #include <linux/fs.h>
 #include <string.h>
 #include <alloca.h>
+#include <errno.h>
 
 int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos)
 {
@@ -11,8 +12,10 @@ int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos)
 
 	de->d_entry_size = 0;
 
-	if (!S_ISDIR(dip->i_mode))
-		return -1; /* ENOTDIR */
+	if (!S_ISDIR(dip->i_mode)) {
+		errno = ENOTDIR;
+		return -1;
+	}
 
 	for (i = 0; iread(dip, pos, de, DIR_ENTRY_SIZE) == DIR_ENTRY_SIZE; i++) {
 		if (!de->d_ino) {
@@ -32,7 +35,8 @@ int dir_find(struct inode *dip, struct dir_entry *de, const char *na, off_t pos)
 	}
 	if (i == 0) {
 		warning("dir even with out [.] entry");
-		return -1; /* EIO */
+		errno = EIO;
+		return -1;
 	}
 	return -1 - pos;
 }
@@ -49,37 +53,44 @@ int dir_destroy(struct inode *dip)
 	for (i = 0; i < 2; i++) {
 		if (iread(dip, pos, &de, DIR_ENTRY_SIZE) != DIR_ENTRY_SIZE) {
 			warning("dir with out [%s] entry", i ? ".." : ".");
-			return -1; /* EIO */
+			errno = EIO;
+			return -1;
 		}
 		if (de.d_name_len != 1 + i) {
 			warning("dir with bad [%s] entry", i ? ".." : ".");
-			return -1; /* EIO */
+			errno = EIO;
+			return -1;
 		}
 		if (!i && de.d_ino != dip->i_ino) {
 			warning("dir with bad [.] entry");
-			return -1; /* EIO */
+			errno = EIO;
+			return -1;
 		}
 		ip[i] = iget(dip->i_dev, de.d_ino);
 		if (!ip) {
 			warning("failed to iget for [%s] entry", i ? ".." : ".");
 			if (i) iput(ip[0]);
-			return -1; /* EIO */
+			errno = EIO;
+			return -1;
 		}
 		iread(dip, pos + DIR_ENTRY_SIZE, name, 1 + i);
 		if (name[0] != '.') {
 			warning("dir with bad [%s] entry", i ? ".." : ".");
-			return -1; /* EIO */
+			errno = EIO;
+			return -1;
 		}
 		if (i && name[1] != '.') {
 			warning("dir with bad [..] entry");
-			return -1; /* EIO */
+			errno = EIO;
+			return -1;
 		}
 		pos += de.d_entry_size;
 	}
 	while (iread(dip, pos, &de, DIR_ENTRY_SIZE) == DIR_ENTRY_SIZE) {
 		if (de.d_ino) {
 			//warning("dir_not_empty");
-			return -1; /* ENOTEMPTY */
+			errno = ENOTEMPTY;
+			return -1;
 		}
 		pos += de.d_entry_size;
 	}
@@ -93,13 +104,17 @@ int dir_destroy(struct inode *dip)
 
 int dir_unlink(struct inode *dip, const char *name, int rd)
 {
-	if (!S_ISDIR(dip->i_mode))
-		return -1; /* ENOTDIR */
+	if (!S_ISDIR(dip->i_mode)) {
+		errno = EISDIR;
+		return -1;
+	}
 
 	static struct dir_entry de, deo;
 	int pos = dir_find(dip, &de, name, 0);
-	if (pos < 0)
-		return -1; /* ENOENT */
+	if (pos < 0) {
+		errno = ENOENT;
+		return -1;
+	}
 #if 0 // {{{
 	if (!pos) return -1;
 	pos -= de.d_entry_size;
@@ -117,16 +132,19 @@ int dir_unlink(struct inode *dip, const char *name, int rd)
 	struct inode *ip = iget(dip->i_dev, ino);
 	if (!ip) {
 		warning("iget returned NULL");
-		return -1; /* EIO */
+		errno = EIO;
+		return -1;
 	}
 	if (rd == 1) {
 		if (!S_ISDIR(ip->i_mode)) {
 			iput(ip);
-			return -1; /* ENOTDIR */
+			errno = ENOTDIR;
+			return -1;
 		}
 	} else if (rd == 0 && S_ISDIR(ip->i_mode)) {
 		iput(ip);
-		return -1; /* EISDIR */
+		errno = EISDIR;
+		return -1;
 	}
 	if (dir_destroy(ip) == -1)
 		return -1;
@@ -139,13 +157,15 @@ int dir_unlink(struct inode *dip, const char *name, int rd)
 	if (iwrite(dip, pos, &de, DIR_ENTRY_SIZE) != DIR_ENTRY_SIZE) {
 		warning("cannot iwrite dir del entry");
 		iput(ip);
-		return -1; /* EIO */
+		errno = EIO;
+		return -1;
 	}
 	char *zero = alloca(len);
 	if (iwrite(dip, pos + DIR_ENTRY_SIZE, zero, len) != len) {
 		warning("cannot iwrite zero entry name string");
 		iput(ip);
-		return -1; /* EIO */
+		errno = EIO;
+		return -1;
 	}
 	if (--ip->i_nlinks <= 0) {
 		ext2_free_inode(ip);
@@ -157,24 +177,34 @@ int dir_unlink(struct inode *dip, const char *name, int rd)
 
 int dir_link(struct inode *dip, const char *name, struct inode *ip)
 {
-	if (!S_ISDIR(dip->i_mode))
-		return -1; /* ENOTDIR */
-	if (dip->i_dev != ip->i_dev)
-		return -1; /* EXDEV */
+	if (!S_ISDIR(dip->i_mode)) {
+		errno = ENOTDIR;
+		return -1;
+	}
+	if (dip->i_dev != ip->i_dev) {
+		errno = EXDEV;
+		return -1;
+	}
 
 	static struct dir_entry de;
 	int pos = dir_find(dip, &de, name, 0);
-	if (pos >= 0)
-		return -1; /* EEXIST */
+	if (pos >= 0) {
+		errno = EEXIST;
+		return -1;
+	}
 	pos = -1 - pos;
-	if (!pos) return -1; /* EEXIST */
+	if (!pos) {
+		errno = EEXIST;
+		return -1;
+	}
 	pos -= de.d_entry_size;
 
 	size_t min_entry_size = de.d_entry_size;
 	de.d_entry_size = ((pos + DIR_ENTRY_SIZE + de.d_name_len + 4) & ~3) - pos;
 	if (iwrite(dip, pos, &de, DIR_ENTRY_SIZE) != DIR_ENTRY_SIZE) {
 		warning("cannot iwrite dir old prev entry");
-		return -1; /* EIO */
+		errno = EIO;
+		return -1;
 	}
 	pos += de.d_entry_size;
 	min_entry_size -= de.d_entry_size;
@@ -191,11 +221,13 @@ int dir_link(struct inode *dip, const char *name, struct inode *ip)
 
 	if (iwrite(dip, pos, &de, DIR_ENTRY_SIZE) != DIR_ENTRY_SIZE) {
 		warning("cannot iwrite dir new entry");
-		return -1; /* EIO */
+		errno = EIO;
+		return -1;
 	}
 	if (iwrite(dip, pos + DIR_ENTRY_SIZE, name, len) != len) {
 		warning("cannot iwrite entry name string");
-		return -1; /* EIO */
+		errno = EIO;
+		return -1;
 	}
 	ip->i_nlinks++;
 	iupdate(ip);
@@ -204,8 +236,10 @@ int dir_link(struct inode *dip, const char *name, struct inode *ip)
 
 int dir_init(struct inode *dip, struct inode *pip)
 {
-	if (!S_ISDIR(dip->i_mode))
-		return -1; /* ENOTDIR */
+	if (!S_ISDIR(dip->i_mode)) {
+		errno = ENOTDIR;
+		return -1;
+	}
 
 	static struct dir_entry de;
 	de.d_ino = dip->i_ino;
@@ -252,8 +286,10 @@ int dir_init(struct inode *dip, struct inode *pip)
 struct inode *dir_creat(struct inode *dip, const char *name, unsigned int mode,
 		unsigned int nod)
 {
-	if (!S_ISDIR(dip->i_mode))
-		return NULL; /* ENOTDIR */
+	if (!S_ISDIR(dip->i_mode)) {
+		errno = ENOTDIR;
+		return NULL;
+	}
 
 	struct inode *ip = ext2_alloc_inode(dip);
 	if (!ip) {

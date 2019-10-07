@@ -4,11 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <malloc.h>
-
-#undef errno
-static int errno;
 
 struct _IO_FILE {
 	int fd;
@@ -192,7 +188,6 @@ FILE * fopen(const char *path, const char *mode) {
 	int fd = open(path, flags, mask);
 
 	if (fd < 0) {
-		errno = -fd;
 		return NULL;
 	}
 
@@ -229,7 +224,6 @@ FILE * freopen(const char *path, const char *mode, FILE * stream) {
 		stream->eof = 0;
 		stream->_name = strdup(path);
 		if (fd < 0) {
-			errno = -fd;
 			return NULL;
 		}
 	}
@@ -305,7 +299,6 @@ int fseek(FILE * stream, long offset, int whence) {
 
 	int resp = lseek(stream->fd,offset,whence);
 	if (resp < 0) {
-		errno = -resp;
 		return -1;
 	}
 	return 0;
@@ -325,7 +318,6 @@ long ftell(FILE * stream) {
 	stream->eof = 0;
 	long resp = lseek(stream->fd, 0, SEEK_CUR);
 	if (resp < 0) {
-		errno = -resp;
 		return -1;
 	}
 	return resp;
@@ -365,7 +357,6 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE * stream) {
 
 	int r = write(stream->fd, (void*)ptr, out_size);
 	if (r < 0) {
-		errno = -r;
 		return -1;
 	}
 
@@ -384,6 +375,13 @@ int fputs(const char *s, FILE *stream) {
 	fwrite(s, strlen(s), 1, stream);
 	/* eof? */
 	return 0;
+}
+
+int puts(const char *s)
+{
+	int ret = fputs(s, stdout);
+	fputc('\n', stdout);
+	return ret;
 }
 
 int fputc(int c, FILE *stream) {

@@ -12,35 +12,39 @@
 #endif
 
 #ifdef _SYSCALL_KERNEL_DEFINATION
-
+	errno = 0;
+	switch (eax) {
 #define _syscallv(i, rt, name, t1) \
 	_SYSCALL rt __attribute__((noreturn)) sys_##name(t1 x1); \
 	case (i): sys_##name((t1) ebx); break;
 #define _syscall0(i, rt, name) \
 	_SYSCALL rt sys_##name(void); \
-	case (i): *&eax = (long)sys_##name(); break;
+	case (i): *&eax = (long)sys_##name(); *&ecx = errno; break;
 #define _syscall1(i, rt, name, t1) \
 	_SYSCALL rt sys_##name(t1); \
-	case (i): *&eax = (long)sys_##name((t1) ebx); break;
+	case (i): *&eax = (long)sys_##name((t1) ebx); *&ecx = errno; break;
 #define _syscall2(i, rt, name, t1, t2) \
 	_SYSCALL rt sys_##name(t1, t2); \
-	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx); break;
+	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx); \
+		  *&ecx = errno; break;
 #define _syscall3(i, rt, name, t1, t2, t3) \
 	_SYSCALL rt sys_##name(t1, t2, t3); \
-	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx, (t3) edx); break;
+	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx, (t3) edx); \
+		  *&ecx = errno; break;
 #define _syscall4(i, rt, name, t1, t2, t3, t4) \
 	_SYSCALL rt sys_##name(t1, t2, t3, t4); \
 	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx, (t3) edx, \
-				  (t4) esi); break;
+				  (t4) esi); *&ecx = errno; break;
 #define _syscall5(i, rt, name, t1, t2, t3, t4, t5) \
 	_SYSCALL rt sys_##name(t1, t2, t3, t4, t5); \
 	case (i): *&eax = (long)sys_##name((t1) ebx, (t2) ecx, (t3) edx, \
-				  (t4) esi, (t5) edi); break;
+				  (t4) esi, (t5) edi); *&ecx = errno; break;
 
 #else
 
 #ifdef _DEFINE_SYSCALL
 #define _DEF_SYS(x) x
+#include <errno.h>
 #else
 #define _DEF_SYS(x) ;
 #endif
@@ -56,51 +60,65 @@
 	_SYSCALL rt name(void) \
 	_DEF_SYS({ \
 		rt ret; \
+		int errnum; \
 		asm volatile ("int $0x80" \
-				: "=a" (ret) : "a" (i)); \
+				: "=a" (ret), "=c" (errnum) : "a" (i)); \
 		return ret; \
 	})
 #define _syscall1(i, rt, name, t1) \
 	_SYSCALL rt name(t1 x1) \
 	_DEF_SYS({ \
 		rt ret; \
+		int errnum; \
 		asm volatile ("int $0x80" \
-				: "=a" (ret) : "a" (i), "b" (x1)); \
+				: "=a" (ret), "=c" (errnum) : "a" (i) \
+				, "b" (x1)); \
+		if (errnum) errno = errnum; \
 		return ret; \
 	})
 #define _syscall2(i, rt, name, t1, t2) \
 	_SYSCALL rt name(t1 x1, t2 x2) \
 	_DEF_SYS({ \
 		rt ret; \
+		int errnum; \
 		asm volatile ("int $0x80" \
-				: "=a" (ret) : "a" (i), "b" (x1), "c" (x2)); \
+				: "=a" (ret), "=c" (errnum) : "a" (i) \
+				, "b" (x1), "c" (x2)); \
+		if (errnum) errno = errnum; \
 		return ret; \
 	})
 #define _syscall3(i, rt, name, t1, t2, t3) \
 	_SYSCALL rt name(t1 x1, t2 x2, t3 x3) \
 	_DEF_SYS({ \
 		rt ret; \
+		int errnum; \
 		asm volatile ("int $0x80" \
-				: "=a" (ret) : "a" (i), "b" (x1) \
-				, "c" (x2), "d" (x3)); \
+				: "=a" (ret), "=c" (errnum) : "a" (i) \
+				, "b" (x1) , "c" (x2), "d" (x3)); \
+		if (errnum) errno = errnum; \
 		return ret; \
 	})
 #define _syscall4(i, rt, name, t1, t2, t3, t4) \
 	_SYSCALL rt name(t1 x1, t2 x2, t3 x3, t4 x4) \
 	_DEF_SYS({ \
 		rt ret; \
+		int errnum; \
 		asm volatile ("int $0x80" \
-				: "=a" (ret) : "a" (i), "b" (x1) \
-				, "c" (x2), "d" (x3), "S" (x4)); \
+				: "=a" (ret), "=c" (errnum) : "a" (i) \
+				, "b" (x1) , "c" (x2), "d" (x3), "S" (x4)); \
+		if (errnum) errno = errnum; \
 		return ret; \
 	})
 #define _syscall5(i, rt, name, t1, t2, t3, t4, t5) \
 	_SYSCALL rt name(t1 x1, t2 x2, t3 x3, t4 x4, t5 x5) \
 	_DEF_SYS({ \
 		rt ret; \
+		int errnum; \
 		asm volatile ("int $0x80" \
-				: "=a" (ret) : "a" (i), "b" (x1) \
-				, "c" (x2), "d" (x3), "S" (x4), "D" (x5)); \
+				: "=a" (ret), "=c" (errnum) : "a" (i) \
+				, "b" (x1) , "c" (x2), "d" (x3), "S" (x4) \
+				, "D" (x5)); \
+		if (errnum) errno = errnum; \
 		return ret; \
 	})
 #endif
@@ -134,3 +152,11 @@ struct stat;
 _syscall4(24, int, fstatat, int, const char __user *, struct stat __user *, int);
 _syscall1(25, int, brk, void __user *);
 _syscall1(26, void __user *, sbrk, int);
+
+#ifdef _SYSCALL_KERNEL_DEFINATION
+	default:
+		warning("undefined syscall %d (%#x)", eax);
+		*&eax = -1;
+		*&ecx = -ENOSYS;
+	}
+#endif
