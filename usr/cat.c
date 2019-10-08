@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <string.h>
 
 void cat(const char *path)
 {
@@ -9,7 +8,7 @@ void cat(const char *path)
 		return;
 	}
 
-		char buf[256];
+	char buf[256];
 	while (fgets(buf, sizeof(buf), fp)) {
 		fputs(buf, stdout);
 	}

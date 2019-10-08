@@ -4,6 +4,7 @@
 #include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/vmm.h>
+#include <linux/io.h>
 #include <string.h>
 #include <alloca.h>
 #include <errno.h>
@@ -102,6 +103,12 @@ static void __user *sys_sbrk(int incr)
 static int sys_brk(void __user *addr)
 {
 	return -(sys_sbrk(addr - (void *)current->brk) == (void *)-1);
+}
+
+static int sys_reboot(int cmd)
+{
+	outb(0x64, 0xfe);
+	return 0;
 }
 
 void on_syscall(PUSHAD_ARGS)

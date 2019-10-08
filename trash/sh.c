@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <alloca.h>
-#include <errno.h>
 
 extern int debug(const char *msg);
 
@@ -114,10 +113,6 @@ int execute_command(char **argv)
 			exit(exit_stat);
 do_exec:
 		exit_stat = execvp(argv[0], argv);
-		if (errno == ENOENT)
-			fprintf(stderr, "%s: command not found\n", argv[0]);
-		else
-			perror(argv[0]);
 		return 1;
 	} else if (pid > 0) {
 		int i = 0;
@@ -125,58 +120,48 @@ do_exec:
 		return 0;
 	} else {
 		exit_stat = pid;
-		perror("fork");
 		return 2;
 	}
 }
 
-char *do_token(char **s)
-{
-	while (**s && isblank(**s)) ++*s;
-	if (!**s)
-		return NULL;
-	char *p = *s;
-	while (**s && !isblank(**s)) ++*s;
-	if (**s) *(*s)++ = 0;
-	return p;
-}
-
 void command(char *s)
 {
+	char *argv[MAX_ARGV], lc;
 	int argc = 0;
-	char *argv[MAX_ARGV], *arg;
-	if ((arg = strchr(s, '#')))
-		*arg = 0;
-	while ((arg = do_token(&s))) {
-		if (argc == MAX_ARGV + 1) {
-			fprintf(stderr, "sh: too much arguments\n");
+	exit_stat = 0;
+	while (*s && isblank(*s))
+		s++;
+	while (1) {
+		lc = 0;
+		while (*s && isblank(*s)) {
+			*s++;
+		}
+		if (!*s)
+			break;
+		char *t = s;
+		while (*t && !isblank(*t))
+			t++;
+		int is_end = !*t;
+		*t = 0;
+		if (argc >= MAX_ARGV) {
+			fprintf(stderr, "%s: too much arguments\n", argv[0]);
 			return;
 		}
-		argv[argc++] = arg;
+		argv[argc++] = s;
+		if (is_end)
+			break;
+		s = t + 1;
 	}
-	if (!argc)
-		return;
-	argv[argc] = 0;
-	execute_command(argv);
-}
+	if (!argc) return;
+	argv[argc] = NULL;
 
-size_t rline(char *buf, size_t size)
-{
-	buf = fgets(buf, size, stdin);
-	return buf ? strlen(buf) : 0;
-#if 0
-	char c, *p = buf;
-	while (p + 1 < buf + size) {
-		c = fgetc(stdin);
-		*p++ = c;
-		if (c == EOF)
-			break;
-		if (c == '\n')
-			break;
-	}
-	*p = 0;
-	return p - buf;
-#endif
+	int i = execute_command(argv);
+	if (!i) return;
+
+	if (i == 1)
+		fprintf(stderr, "%s: bad command\n", argv[0]);
+	else
+		fprintf(stderr, "%s: bad fork\n", argv[0]);
 }
 
 int main(int argc, char **argv)
@@ -186,20 +171,17 @@ int main(int argc, char **argv)
 		perror(argv[1] ? argv[1] : "<stdin>");
 		return EXIT_FAILURE;
 	}
-	int is_tty = fp == stdin; // TODO: use termios.h function instead!
 
-	while (1) {
-		char buf[256];
-
-		if (is_tty) {
+	while (1) { // TODO: too bad, use fgets instead
+		if (fp == stdin) {
 			fprintf(stderr, "# ");
 			fflush(stderr);
-			if (!rline(buf, sizeof(buf)))
-				break;
-		} else if (!fgets(buf, sizeof(buf), fp))
+		}
+
+		char buf[256], *lp, *p = buf;
+		if (!fgets(buf, sizeof(buf), fp))
 			break;
 
-		char *lp, *p = buf;
 		while (*(lp = p)) {
 			while (*p && *p != '\n') p++;
 			*p = 0;

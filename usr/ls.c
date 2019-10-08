@@ -6,7 +6,9 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
-extern int dirread(int dd, struct dirent *de);
+int ls_show_all = 0;
+
+extern int dirread(int dd, struct dirent *de); // my system api da!
 
 void lsfile(int dd, const char *parent, const char *name)
 {
@@ -14,19 +16,15 @@ void lsfile(int dd, const char *parent, const char *name)
 	struct stat st;
 	if (fstatat(dd, name, &st, 0) == -1) {
 		if (parent) {
-			write(2, parent, strlen(parent));
-			write(2, "/", 1);
+			printf("%s/", parent);
 		}
-		write(2, name, strlen(name));
-		write(2, ": stat error\n", 13);
+		perror(name);
 		return;
 	}
-	sprintf(buf, "%5d ", st.st_ino);
-	write(2, buf, strlen(buf));
-	write(2, name, strlen(name));
+	printf("%5d %s", st.st_ino, name);
 	if (S_ISDIR(st.st_mode))
-		write(2, "/", 1);
-	write(2, "\n", 1);
+		printf("/");
+	printf("\n");
 }
 
 void ls(const char *path)
@@ -38,6 +36,16 @@ void ls(const char *path)
 	}
 	struct dirent de;
 	while (dirread(dd, &de) == 1) {
+		if (de.d_name[0] == '.') {
+			if (!ls_show_all)
+				continue;
+			else if (ls_show_all == 1) { // -A
+				switch (de.d_name[1]) {
+				case '.': case 0:
+					continue;
+				}
+			}
+		}
 		lsfile(dd, path, de.d_name);
 	}
 	close(dd);
@@ -45,8 +53,21 @@ void ls(const char *path)
 
 int main(int argc, char *const *argv)
 {
-	if (argc == 1) ls(".");
-	else for (int i = 1; i < argc; i++)
+	argv++, argc--;
+	if (argc && argv[0][0] == '-') {
+		switch (argv[0][1]) {
+		case 'a': ls_show_all = 2; break;
+		case 'A': ls_show_all = 1; break;
+		}
+		argv++, argc--;
+	}
+	if (!argc) ls(".");
+	else if (argc == 1) ls(argv[0]);
+	else for (int i = 0; i < argc; i++) {
+		printf("%s:\n", argv[i]);
 		ls(argv[i]);
+		if (i != argc - 1)
+			printf("\n", argv[i]);
+	}
 	return 0;
 }

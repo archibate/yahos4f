@@ -1,15 +1,18 @@
+// TODO: Under construction!! setenv, putenv, unsetenv has BUG!!!!
 #include <stdlib.h>
 #include <string.h>
 
 extern char **environ;
+extern int _environ_size;
 
 char *getenv(const char *name)
 {
 	for (char **envp = environ; *envp; envp++) {
 		char *s = *envp;
 		while (*s && *s != '=') s++;
-		if (!memcmp(name, *envp, s - *envp))
-			return *s == '=' ? s + 1 : s;
+		if (*s == '=' && strlen(name) == s - *envp &&
+			!memcmp(name, *envp, s - *envp))
+			return s + 1;
 	}
 	return NULL;
 }
@@ -25,9 +28,6 @@ int setenv(const char *name, const char *value, int overwrite)
 	strcat(tmp, value);
 	return putenv(tmp);
 }
-
-extern char ** environ;
-extern int _environ_size;
 
 static int why_no_strnstr(char * a, char * b, int n)
 {
@@ -47,8 +47,8 @@ int unsetenv(const char *name)
 
 	for (int i = 0; environ[i]; ++i) {
 		if (found_index == -1 &&
-				!memcmp(environ[i], name, len) &&
-					environ[i][len] == '=') {
+			!memcmp(environ[i], name, len) &&
+				environ[i][len] == '=') {
 			found_index = i;
 		}
 		last_index = i;
@@ -74,7 +74,7 @@ int unsetenv(const char *name)
 
 int putenv(char *string)
 {
-	char name[strlen(string)];
+	char name[strlen(string) + 1];
 	strcpy(name, string);
 	char *c = strchr(name, '=');
 	if (!c) {

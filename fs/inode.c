@@ -19,7 +19,7 @@ static struct inode *find_inode(int dev, int ino)
 
 static struct inode *alloc_inode(void)
 {
-	for (int i = 0; i < NR_SUPER; i++) {
+	for (int i = 0; i < NR_INODE; i++) {
 		struct inode *ip = &inode[i];
 		if (!ip->i_count) {
 			ip->i_count = 1;
@@ -27,6 +27,13 @@ static struct inode *alloc_inode(void)
 			return ip;
 		}
 	}
+#if 0
+	for (int i = 0; i < NR_INODE; i++) {
+		printk("#%d: dev=%d, ino=%d, count=%d\n", i,
+				inode[i].i_dev, inode[i].i_ino,
+				inode[i].i_count);
+	}
+#endif
 	panic("too much inode loaded, synfree uni");
 	return NULL;
 }

@@ -4,8 +4,13 @@
 #include <linux/fifo.h>
 #include <linux/sched.h>
 
+#define TTY_EOF (-1)
+#define TTY_INT (-2)
+
 static struct fifo kb_fifo;
 static struct task *kb_wait;
+
+static int kb_got_eof;
 
 int cgetc(void)
 {
@@ -14,17 +19,25 @@ int cgetc(void)
 		if (!fifo_empty(&kb_fifo))
 			break;
 	}
-	return fifo_get(&kb_fifo);
+	char ch = fifo_get(&kb_fifo);
+	return ch;
+}
+
+int cungetc(int c)
+{
+	fifo_put(&kb_fifo, c);
+	if (c == '\n' || c == TTY_EOF)
+		wake_up(&kb_wait);
+	return 0;
 }
 
 static void kb_putc(int c)
 {
 	if (fifo_full(&kb_fifo))
 		return;
-	cputc(c);
-	fifo_put(&kb_fifo, c);
-	if (c == '\n')
-		wake_up(&kb_wait);
+	if (0 <= c && c <= '~')
+		cputc(c);
+	cungetc(c);
 }
 
 // Keyboard Map {{{
@@ -132,9 +145,6 @@ static char shift(char uc)
 	}
 	return 0;
 }
-
-#define TTY_EOF (-1)
-#define TTY_INT (-2)
 
 static int ctrl(int ch)
 {

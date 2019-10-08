@@ -152,6 +152,8 @@ struct stat;
 _syscall4(24, int, fstatat, int, const char __user *, struct stat __user *, int);
 _syscall1(25, int, brk, void __user *);
 _syscall1(26, void __user *, sbrk, int);
+_syscall1(27, int, reboot, int);
+_syscall0(28, int, sync);
 
 #ifdef _SYSCALL_KERNEL_DEFINATION
 	default:
